@@ -1,0 +1,20 @@
+.media-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+  }
+  
+  .media-thumb:hover .media-thumb-overlay {
+    background: rgba(0,0,0,0.18);
+  }
+  
+  .media-thumb:hover .media-overlay-icon {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .media-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+    border-color: #9ca3af;
+  }
+  
