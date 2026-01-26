@@ -6,6 +6,9 @@ import StepsEditor from "../components/StepsEditor";
 import FeedbackForm from "../components/FeedbackForm";
 import Section from "../components/Section";
 
+import { getCategoryCover } from "../lib/categoryCover";
+
+
 export default function RecipeDetail({ id, onBack }) {
   const [recipe, setRecipe] = useState(null);
   const [err, setErr] = useState("");
@@ -263,17 +266,22 @@ export default function RecipeDetail({ id, onBack }) {
         </div>
       ) : null}
 
-      {/* Cover image display */}
-      {primaryImage && primaryImage.media_type === "image" ? (
-        <div style={page.heroImageWrap}>
-          <img
-            src={resolveSrc(primaryImage.url)}
-            alt={primaryImage.caption || recipe.name}
-            style={page.heroImage}
-          />
-          {primaryImage.caption ? <div style={page.heroCaption}>{primaryImage.caption}</div> : null}
-        </div>
-      ) : null}
+{/* Cover image display (or category fallback) */}
+<div style={page.heroImageWrap}>
+  <img
+    src={
+      primaryImage && primaryImage.media_type === "image"
+        ? resolveSrc(primaryImage.url)
+        : getCategoryCover(recipe.category)
+    }
+    alt={primaryImage?.caption || recipe.name}
+    style={page.heroImage}
+  />
+  {primaryImage?.caption ? (
+    <div style={page.heroCaption}>{primaryImage.caption}</div>
+  ) : null}
+</div>
+
 
       <div style={page.sections}>
         <Section title="Ingredients">
