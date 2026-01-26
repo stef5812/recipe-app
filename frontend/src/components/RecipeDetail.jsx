@@ -29,21 +29,32 @@ export default function RecipeDetail({ id, onBack }) {
 
   const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3001";
 
-  function getTokenUserId() {
+
+  function getTokenPayload() {
     const token = localStorage.getItem("token");
     if (!token) return null;
-
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      return String(payload.userId ?? payload.user_id ?? payload.sub ?? "");
+      return JSON.parse(atob(token.split(".")[1]));
     } catch {
       return null;
     }
   }
+  
 
-  const tokenUserId = getTokenUserId();
+  const payload = getTokenPayload();
+
+  const tokenUserId =
+    payload?.userId != null ? String(payload.userId) :
+    payload?.user_id != null ? String(payload.user_id) :
+    payload?.sub != null ? String(payload.sub) :
+    null;
+  
+  const isAdmin = Boolean(payload?.isAdmin);
+  
   const recipeOwnerId = recipe?.user_id != null ? String(recipe.user_id) : null;
-  const canEdit = Boolean(tokenUserId && recipeOwnerId && tokenUserId === recipeOwnerId);
+  const canEdit = Boolean(isAdmin || (tokenUserId && recipeOwnerId && tokenUserId === recipeOwnerId));
+   
+  
 
   function resolveSrc(url) {
     const raw = String(url ?? "").replaceAll("\\", "/");

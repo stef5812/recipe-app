@@ -18,12 +18,19 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
 
   const [steps, setSteps] = useState(initial);
   const [newStep, setNewStep] = useState("");
+
+  // NEW: inline edit state
+  const [editingIndex, setEditingIndex] = useState(null); // number | null
+  const [editingText, setEditingText] = useState("");
+
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
   // When recipe reloads, refresh editor list
   useEffect(() => {
     setSteps(initial);
+    setEditingIndex(null);
+    setEditingText("");
   }, [id, initial]);
 
   function add() {
@@ -35,6 +42,31 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
 
   function remove(idx) {
     setSteps((prev) => prev.filter((_, i) => i !== idx));
+    if (editingIndex === idx) {
+      setEditingIndex(null);
+      setEditingText("");
+    }
+  }
+
+  function startEdit(idx) {
+    setEditingIndex(idx);
+    setEditingText(steps[idx] ?? "");
+  }
+
+  function cancelEdit() {
+    setEditingIndex(null);
+    setEditingText("");
+  }
+
+  function applyEdit() {
+    const trimmed = editingText.trim();
+    if (!trimmed) {
+      setErr("Step cannot be empty.");
+      return;
+    }
+    setSteps((prev) => prev.map((s, i) => (i === editingIndex ? trimmed : s)));
+    setEditingIndex(null);
+    setEditingText("");
   }
 
   async function save() {
@@ -42,6 +74,18 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
     if (!id) {
       setErr("Missing recipe id.");
       return;
+    }
+
+    // If they’re currently editing, apply it first (so they don’t lose changes)
+    if (editingIndex !== null) {
+      const trimmed = editingText.trim();
+      if (!trimmed) {
+        setErr("Step cannot be empty.");
+        return;
+      }
+      setSteps((prev) => prev.map((s, i) => (i === editingIndex ? trimmed : s)));
+      setEditingIndex(null);
+      setEditingText("");
     }
 
     setBusy(true);
@@ -52,18 +96,13 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
         body: { steps },
       });
 
-      // 1) Let parent refresh/hide editor if it wants
       onSaved?.(id);
-
-      // 2) Let wizard/state-driven parent jump to detail
       onFinish?.(id);
 
-      // 3) Router fallback: go to recipe detail route if you have one
-      // If your route is different, change this path.
       try {
         navigate(`/recipes/${id}`);
       } catch {
-        // ignore if navigation isn't available in current setup
+        // ignore
       }
     } catch (e) {
       setErr(e.message);
@@ -84,18 +123,49 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
 
       <h3>Steps</h3>
 
-      <ol>
-        {steps.map((s, idx) => (
-          <li key={idx}>
-            {s}{" "}
-            <button type="button" onClick={() => remove(idx)}>
-              Remove
-            </button>
-          </li>
-        ))}
+      <ol style={{ paddingLeft: 18 }}>
+        {steps.map((s, idx) => {
+          const isEditing = editingIndex === idx;
+
+          return (
+            <li key={idx} style={{ marginBottom: 10 }}>
+              {!isEditing ? (
+                <>
+                  <div style={{ whiteSpace: "pre-wrap" }}>{s}</div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <button type="button" onClick={() => startEdit(idx)}>
+                      Edit
+                    </button>
+                    <button type="button" onClick={() => remove(idx)}>
+                      Remove
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}>
+                  <textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    rows={4}
+                    style={{ width: "100%", resize: "vertical" }}
+                    autoFocus
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button type="button" onClick={applyEdit}>
+                      Save change
+                    </button>
+                    <button type="button" onClick={cancelEdit}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ol>
 
-      <div>
+      <div style={{ marginTop: 10 }}>
         <input
           placeholder="New step…"
           value={newStep}

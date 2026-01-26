@@ -1,0 +1,4 @@
+Recipe app
+
+scp -i ~/.ssh/id_ed25519 root@93.127.202.67:/tmp/recipes.sql .
+

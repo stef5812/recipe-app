@@ -1,6 +1,8 @@
 import { Routes, Route, Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 
+import ErrorBoundary from "./components/ErrorBoundary";
+
 import Login from "./components/Login";
 import Register from "./components/Register";
 
@@ -129,39 +131,35 @@ export default function App() {
 />
 
 
-  {/* Ingredients step (PROTECTED) */}
-  <Route
-    path="/recipes/:id/ingredients"
-    element={
-      <RequireAuth>
-        <IngredientForm
-          onNext={(id) => navigate(`/recipes/${id}/steps`, { replace: true })}
-        />
-      </RequireAuth>
-    }
-  />
 
-  {/* Steps step (PROTECTED) */}
-  <Route
-    path="/recipes/:id/steps"
-    element={
-      <RequireAuth>
-        <StepsEditor
-          onDone={(id) => navigate(`/recipes/${id}`, { replace: true })}
-        />
-      </RequireAuth>
-    }
-  />
+
+
+<Route
+  path="/recipes/:id/steps"
+  element={
+    <RequireAuth>
+      <StepsEditor
+        onSaved={(id) => navigate(`/recipes/${id}`, { replace: true })}
+        onFinish={(id) => navigate(`/recipes/${id}`, { replace: true })}
+      />
+    </RequireAuth>
+  }
+/>
+
+
 
   {/* Recipe detail (PROTECTED) */}
   <Route
-    path="/recipes/:id"
-    element={
-      <RequireAuth>
+  path="/recipes/:id"
+  element={
+    <RequireAuth>
+      <ErrorBoundary>
         <RecipeDetailRoute />
-      </RequireAuth>
-    }
-  />
+      </ErrorBoundary>
+    </RequireAuth>
+  }
+/>
+
 
   {/* Fallback */}
   <Route path="*" element={<Navigate to="/" replace />} />
@@ -179,6 +177,33 @@ function RecipeDetailRoute() {
     <RecipeDetail
       id={id}
       onBack={() => navigate("/recipes")}
+    />
+  );
+}
+
+function IngredientsRoute() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <IngredientForm
+      recipeId={id}
+      onNext={() => navigate(`/recipes/${id}/steps`, { replace: true })}
+      onDone={() => navigate(`/recipes/${id}`, { replace: true })}
+    />
+  );
+}
+
+function StepsRoute() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <StepsEditor
+      recipeId={id}
+      // no initialSteps in wizard (it’s fine)
+      onSaved={() => navigate(`/recipes/${id}`, { replace: true })}
+      onFinish={() => navigate(`/recipes/${id}`, { replace: true })}
     />
   );
 }
