@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import { useParams, useNavigate } from "react-router-dom";
+import PageContainer from "./PageContainer";
+import Section from "./Section";
 
-export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish }) {
+export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish, onBack }) {
   const params = useParams();
   const navigate = useNavigate();
 
@@ -18,19 +20,12 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
 
   const [steps, setSteps] = useState(initial);
   const [newStep, setNewStep] = useState("");
-
-  // NEW: inline edit state
-  const [editingIndex, setEditingIndex] = useState(null); // number | null
-  const [editingText, setEditingText] = useState("");
-
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
   // When recipe reloads, refresh editor list
   useEffect(() => {
     setSteps(initial);
-    setEditingIndex(null);
-    setEditingText("");
   }, [id, initial]);
 
   function add() {
@@ -42,51 +37,11 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
 
   function remove(idx) {
     setSteps((prev) => prev.filter((_, i) => i !== idx));
-    if (editingIndex === idx) {
-      setEditingIndex(null);
-      setEditingText("");
-    }
-  }
-
-  function startEdit(idx) {
-    setEditingIndex(idx);
-    setEditingText(steps[idx] ?? "");
-  }
-
-  function cancelEdit() {
-    setEditingIndex(null);
-    setEditingText("");
-  }
-
-  function applyEdit() {
-    const trimmed = editingText.trim();
-    if (!trimmed) {
-      setErr("Step cannot be empty.");
-      return;
-    }
-    setSteps((prev) => prev.map((s, i) => (i === editingIndex ? trimmed : s)));
-    setEditingIndex(null);
-    setEditingText("");
   }
 
   async function save() {
     setErr("");
-    if (!id) {
-      setErr("Missing recipe id.");
-      return;
-    }
-
-    // If they’re currently editing, apply it first (so they don’t lose changes)
-    if (editingIndex !== null) {
-      const trimmed = editingText.trim();
-      if (!trimmed) {
-        setErr("Step cannot be empty.");
-        return;
-      }
-      setSteps((prev) => prev.map((s, i) => (i === editingIndex ? trimmed : s)));
-      setEditingIndex(null);
-      setEditingText("");
-    }
+    if (!id) return setErr("Missing recipe id.");
 
     setBusy(true);
     try {
@@ -99,11 +54,10 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
       onSaved?.(id);
       onFinish?.(id);
 
+      // fallback
       try {
         navigate(`/recipes/${id}`);
-      } catch {
-        // ignore
-      }
+      } catch {}
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -112,96 +66,156 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
   }
 
   return (
-    <div style={{ border: "1px solid #ddd", padding: 12, margin: "16px 0" }}>
-      <div style={styles.heroWrap}>
-        <img
-          src="https://www.tastingtable.com/img/gallery/beating-whisking-and-folding-how-these-techniques-result-in-different-textures-for-your-cake/intro-1759939960.jpg"
-          alt="Busy kitchen"
-          style={styles.heroImage}
-        />
-      </div>
-
-      <h3>Steps</h3>
-
-      <ol style={{ paddingLeft: 18 }}>
-        {steps.map((s, idx) => {
-          const isEditing = editingIndex === idx;
-
-          return (
-            <li key={idx} style={{ marginBottom: 10 }}>
-              {!isEditing ? (
-                <>
-                  <div style={{ whiteSpace: "pre-wrap" }}>{s}</div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                    <button type="button" onClick={() => startEdit(idx)}>
-                      Edit
-                    </button>
-                    <button type="button" onClick={() => remove(idx)}>
-                      Remove
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 10 }}>
-                  <textarea
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
-                    rows={4}
-                    style={{ width: "100%", resize: "vertical" }}
-                    autoFocus
-                  />
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button type="button" onClick={applyEdit}>
-                      Save change
-                    </button>
-                    <button type="button" onClick={cancelEdit}>
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-
-      <div style={{ marginTop: 10 }}>
-        <input
-          placeholder="New step…"
-          value={newStep}
-          onChange={(e) => setNewStep(e.target.value)}
-          style={{ width: "70%" }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") add();
-          }}
-        />
-        <button type="button" onClick={add} style={{ marginLeft: 8 }}>
-          Add step
+    <PageContainer title="Steps">
+      {onBack ? (
+        <button type="button" onClick={onBack} style={ui.backBtn}>
+          ← Back
         </button>
+      ) : null}
 
-        <button type="button" onClick={save} disabled={busy} style={{ marginLeft: 8 }}>
-          {busy ? "Saving…" : "Save & finish"}
-        </button>
-      </div>
+      <Section title="Add steps">
+        <div style={ui.list}>
+          {steps.length ? (
+            <ol style={ui.ol}>
+              {steps.map((s, idx) => (
+                <li key={idx} style={ui.stepRow}>
+                  <div style={ui.stepText}>{s}</div>
+                  <button type="button" onClick={() => remove(idx)} style={ui.ghostBtn}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p style={{ opacity: 0.7, margin: 0 }}>No steps yet. Add your first step below.</p>
+          )}
+        </div>
 
-      {err && <p style={{ color: "crimson" }}>{err}</p>}
-    </div>
+        <div style={ui.addRow}>
+          <input
+            placeholder="New step…"
+            value={newStep}
+            onChange={(e) => setNewStep(e.target.value)}
+            style={ui.input}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") add();
+            }}
+          />
+          <button type="button" onClick={add} style={ui.btn}>
+            Add step
+          </button>
+
+          <button type="button" onClick={save} disabled={busy} style={ui.primaryBtn}>
+            {busy ? "Saving…" : "Save & finish"}
+          </button>
+        </div>
+
+        {err ? <div style={ui.error}>{err}</div> : null}
+      </Section>
+    </PageContainer>
   );
 }
 
-const styles = {
-  heroWrap: {
-    maxWidth: 1100,
-    margin: "20px auto 14px",
-    borderRadius: 16,
-    overflow: "hidden",
+const ui = {
+  backBtn: {
+    marginBottom: 12,
     border: "1px solid #e5e7eb",
-    background: "#fafafa",
+    borderRadius: 12,
+    padding: "8px 10px",
+    background: "white",
+    cursor: "pointer",
+    fontWeight: 600,
   },
-  heroImage: {
-    width: "100%",
-    height: 180,
-    objectFit: "cover",
-    display: "block",
+
+  list: {
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 12,
+    background: "#fafafa",
+    marginBottom: 12,
+  },
+
+  ol: {
+    margin: 0,
+    paddingLeft: 18,
+    display: "grid",
+    gap: 10,
+  },
+
+  stepRow: {
+    display: "flex",
+    gap: 10,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    padding: "10px 10px",
+    borderRadius: 12,
+    background: "white",
+    border: "1px solid #e5e7eb",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+  },
+
+  stepText: {
+    flex: 1,
+    lineHeight: 1.35,
+    fontSize: 14,
+    opacity: 0.92,
+  },
+
+  addRow: {
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+
+  input: {
+    flex: "1 1 360px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: "10px 12px",
+    fontSize: 14,
+    outline: "none",
+    background: "white",
+  },
+
+  btn: {
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: "10px 12px",
+    background: "white",
+    cursor: "pointer",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+    fontWeight: 700,
+  },
+
+  primaryBtn: {
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: "10px 12px",
+    background: "white",
+    cursor: "pointer",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+    fontWeight: 800,
+    opacity: 0.95,
+  },
+
+  ghostBtn: {
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    padding: "6px 10px",
+    background: "white",
+    cursor: "pointer",
+    opacity: 0.9,
+    whiteSpace: "nowrap",
+  },
+
+  error: {
+    marginTop: 10,
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    color: "#991b1b",
+    fontSize: 13,
   },
 };
