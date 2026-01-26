@@ -29,12 +29,14 @@ const COUNTRY_OPTIONS = [
 
 const CATEGORY_OPTIONS = [
   { value: "ENTREE", label: "Entree" },
+  { value: "SNACK", label: "Snack" },
   { value: "SOUP", label: "Soup" },
   { value: "STARTER", label: "Starter" },
   { value: "MAIN", label: "Main" },
   { value: "DESSERT", label: "Dessert" },
   { value: "CAKE", label: "Cake" },
   { value: "SWEET", label: "Sweet" },
+  { value: "CONSERVE", label: "Conserve" },
 ];
 
 export default function RecipeCreate({ onCreated, onBack }) {

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import Section from "./Section";
 import PageContainer from "./PageContainer";
+import { getCategoryCover } from "../lib/categoryCover";
+
 
 function getTokenPayload() {
   const token = localStorage.getItem("token");
@@ -118,8 +120,11 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
                 r?.recipe_media?.[0] ??
                 null;
 
-              const coverUrl =
-                cover?.url && cover?.media_type !== "video" ? resolveSrc(cover.url) : null;
+                const coverUrl =
+                cover?.url && cover?.media_type !== "video"
+                  ? resolveSrc(cover.url)
+                  : getCategoryCover(r.category);
+              
 
               return (
                 <div key={String(r.id)} style={styles.cardWrap}>

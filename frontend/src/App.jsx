@@ -134,17 +134,26 @@ export default function App() {
 
 
 
+{/* Ingredients step (PROTECTED) */}
+<Route
+  path="/recipes/:id/ingredients"
+  element={
+    <RequireAuth>
+      <IngredientsWizardRoute />
+    </RequireAuth>
+  }
+/>
+
+{/* Steps step (PROTECTED) */}
 <Route
   path="/recipes/:id/steps"
   element={
     <RequireAuth>
-      <StepsEditor
-        onSaved={(id) => navigate(`/recipes/${id}`, { replace: true })}
-        onFinish={(id) => navigate(`/recipes/${id}`, { replace: true })}
-      />
+      <StepsWizardRoute />
     </RequireAuth>
   }
 />
+
 
 
 
@@ -180,6 +189,31 @@ function RecipeDetailRoute() {
     />
   );
 }
+
+function IngredientsWizardRoute() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <IngredientForm
+      recipeId={id}
+      onNext={() => navigate(`/recipes/${id}/steps`, { replace: true })}
+    />
+  );
+}
+
+function StepsWizardRoute() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <StepsEditor
+      recipeId={id}
+      onFinish={() => navigate(`/recipes/${id}`, { replace: true })}
+    />
+  );
+}
+
 
 function IngredientsRoute() {
   const { id } = useParams();

@@ -111,12 +111,14 @@ router.get("/", async (_req, res) => {
       source: true,
       created_at: true,
       user_id: true,
+      category: true, // ✅ ADD THIS LINE
       recipe_media: {
         where: { is_primary: true },
         take: 1,
         select: { url: true, caption: true, media_type: true },
       },
     },
+    
   });
 
   res.json(recipes);
