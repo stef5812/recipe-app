@@ -8,6 +8,7 @@ import Section from "../components/Section";
 
 import { getCategoryCover } from "../lib/categoryCover";
 
+import { formStyles } from "./ui/formStyles";
 
 export default function RecipeDetail({ id, onBack }) {
   const [recipe, setRecipe] = useState(null);
@@ -322,25 +323,27 @@ export default function RecipeDetail({ id, onBack }) {
                               setEditIng((p) => ({ ...p, ingredient_name: e.target.value }))
                             }
                             placeholder="Ingredient name"
+                            style={formStyles.input}
                           />
                           <div style={{ display: "flex", gap: 8 }}>
                             <input
                               value={editIng.amount}
                               onChange={(e) => setEditIng((p) => ({ ...p, amount: e.target.value }))}
                               placeholder="Amount"
-                              style={{ width: 120 }}
+                              style={{ ...formStyles.input, width: 120 }}
                             />
                             <input
                               value={editIng.unit}
                               onChange={(e) => setEditIng((p) => ({ ...p, unit: e.target.value }))}
                               placeholder="Unit"
-                              style={{ width: 120 }}
+                              style={{ ...formStyles.input, width: 120 }}
                             />
                           </div>
                           <input
                             value={editIng.note}
                             onChange={(e) => setEditIng((p) => ({ ...p, note: e.target.value }))}
                             placeholder="Note (optional)"
+                            style={formStyles.input}
                           />
 
                           {editErr ? <div style={{ color: "crimson" }}>{editErr}</div> : null}
@@ -483,9 +486,10 @@ export default function RecipeDetail({ id, onBack }) {
 
           {canEdit ? (
             <>
-              <button type="button" onClick={() => setShowEditSteps((v) => !v)}>
-                {showEditSteps ? "Hide steps editor" : hasSteps ? "Edit steps" : "Add steps"}
-              </button>
+<button type="button" onClick={() => window.location.assign(`/recipe-app/recipes/${id}/steps`)}>
+  {hasSteps ? "Edit steps" : "Add steps"}
+</button>
+
 
               {showEditSteps || !hasSteps ? (
                 <StepsEditor

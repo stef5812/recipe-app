@@ -1,5 +1,10 @@
 import { Routes, Route, Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "./lib/api";
+
+import PageContainer from "./components/PageContainer";
+import Section from "./components/Section";
+
 
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -121,9 +126,7 @@ export default function App() {
   element={
     <RequireAuth>
       <RecipeCreate
-        onCreated={(id) =>
-          navigate(`/recipes/${id}/ingredients`, { replace: true })
-        }
+        onCreated={(id) => navigate(`/recipes/${id}`, { replace: true })}
         onBack={() => navigate("/recipes")}
       />
     </RequireAuth>
@@ -132,17 +135,6 @@ export default function App() {
 
 
 
-
-
-{/* Ingredients step (PROTECTED) */}
-<Route
-  path="/recipes/:id/ingredients"
-  element={
-    <RequireAuth>
-      <IngredientsWizardRoute />
-    </RequireAuth>
-  }
-/>
 
 {/* Steps step (PROTECTED) */}
 <Route
@@ -206,13 +198,50 @@ function StepsWizardRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const [recipe, setRecipe] = useState(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    setErr("");
+    api(`/recipes/${id}`)
+      .then(setRecipe)
+      .catch((e) => setErr(e.message));
+  }, [id]);
+
+  if (err) return <p style={{ color: "crimson" }}>{err}</p>;
+  if (!recipe) return <p>Loading…</p>;
+
   return (
-    <StepsEditor
-      recipeId={id}
-      onFinish={() => navigate(`/recipes/${id}`, { replace: true })}
-    />
+    <PageContainer title="Edit steps">
+      <button
+        type="button"
+        onClick={() => navigate(`/recipes/${id}`, { replace: true })}
+        style={{
+          marginBottom: 12,
+          border: "1px solid #e5e7eb",
+          borderRadius: 12,
+          padding: "8px 10px",
+          background: "white",
+          cursor: "pointer",
+          fontWeight: 600,
+        }}
+      >
+        ← Back to recipe
+      </button>
+
+      <Section title="Steps">
+        <StepsEditor
+          recipeId={id}
+          initialSteps={recipe.recipe_steps ?? []}
+          onSaved={() => navigate(`/recipes/${id}`, { replace: true })}
+          onFinish={() => navigate(`/recipes/${id}`, { replace: true })}
+        />
+      </Section>
+    </PageContainer>
   );
 }
+
+
 
 
 function IngredientsRoute() {
