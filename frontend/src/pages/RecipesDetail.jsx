@@ -50,7 +50,7 @@ export default function RecipeDetail({ id }) {
       {canEdit ? (
         <>
           <IngredientForm recipeId={id} onDone={load} />
-          <StepsEditor recipeId={id} initialSteps={recipe.recipe_steps ?? []} onSaved={load} />
+          
           <MediaForm recipeId={id} onDone={load} />
         </>
       ) : (

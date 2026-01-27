@@ -1,7 +1,7 @@
 // src/components/IngredientForm.jsx
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 export default function IngredientForm({ recipeId, onAdded, onNext }) {
   const params = useParams();
@@ -12,6 +12,9 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
   const [amount, setAmount] = useState("");
   const [unit, setUnit] = useState("");
   const [note, setNote] = useState("");
+
+  const navigate = useNavigate();
+
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -316,13 +319,14 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
 
             <button
               type="button"
-              onClick={() => onNext?.(id)}
+              onClick={() => navigate(`/recipes/${id}/steps`)}
               disabled={!id}
               style={styles.secondaryBtn}
               title={!id ? "Missing recipe id" : "Continue to steps"}
             >
               Next: add steps
             </button>
+
           </div>
         </form>
 

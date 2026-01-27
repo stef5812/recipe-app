@@ -116,14 +116,15 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
             {recipes.map((r) => {
               // If your /recipes endpoint returns recipe_media with is_primary, grab it:
               const cover =
-                r?.recipe_media?.find?.((m) => m.is_primary) ??
-                r?.recipe_media?.[0] ??
-                null;
-
-                const coverUrl =
-                cover?.url && cover?.media_type !== "video"
-                  ? resolveSrc(cover.url)
-                  : getCategoryCover(r.category);
+              r?.recipe_media?.find?.((m) => m.is_primary) ??
+              r?.recipe_media?.[0] ??
+              null;
+            
+            const coverUrl =
+              cover?.url && cover?.media_type !== "video"
+                ? resolveSrc(cover.url)
+                : getCategoryCover(r.category);
+            
               
 
               return (

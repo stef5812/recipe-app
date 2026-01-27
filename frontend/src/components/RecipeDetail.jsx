@@ -491,16 +491,17 @@ export default function RecipeDetail({ id, onBack }) {
 </button>
 
 
-              {showEditSteps || !hasSteps ? (
-                <StepsEditor
-                  recipeId={id}
-                  initialSteps={recipe.recipe_steps}
-                  onSaved={() => {
-                    load();
-                    setShowEditSteps(false);
-                  }}
-                />
-              ) : null}
+{showEditSteps ? (
+  <StepsEditor
+    recipeId={id}
+    initialSteps={recipe.recipe_steps}
+    onSaved={() => {
+      load();
+      setShowEditSteps(false);
+    }}
+  />
+) : null}
+
             </>
           ) : null}
         </Section>
