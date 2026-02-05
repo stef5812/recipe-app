@@ -9,6 +9,8 @@ import createRecipeImg from "../assets/create-recipe.png";
 import searchImg from "../assets/search.png";
 import viewRecipesImg from "../assets/view-recipes.png";
 
+import recipeHeader from "../assets/recipe-header.jpg";
+
 
 
 
@@ -101,7 +103,7 @@ export default function Home({
       {/* NEW: Top image + intro */}
       <div style={hero.wrap}>
         <img
-          src="https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?auto=format&fit=crop&w=1800&q=80"
+          src={recipeHeader}
           alt="Recipe book hero"
           style={hero.img}
         />
@@ -109,11 +111,12 @@ export default function Home({
         <div style={hero.content}>
           <div style={hero.title}>Mum's recipes</div>
           <div style={hero.subtitle}>
-          While travelling with my family, my mum discovered wonderful recipes from around the world. 
-          This is our place to share them — and for everyone to add their own favourite dishes.
+            While travelling with my family, my mum discovered wonderful recipes from around the world.
+            This is our place to share them — and for everyone to add their own favourite dishes.
           </div>
         </div>
       </div>
+
 
       {/* Existing hero area (search + CTA + tip) */}
       <div style={content.wrap}>
