@@ -4,7 +4,12 @@
   font-weight: 400;
 
   color: #111827;
-  background-color: #ffffff;
+  min-height: 100vh;
+  background: transparent;
+
+  margin: 0;
+  padding: 0;
+  display: flow-root;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,11 +27,24 @@ a:hover {
   color: #535bf2;
 }
 
+html, body {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;  
+}
+
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+
+  background-image: url("../public/background.png");
+  background-repeat: repeat;
+  background-size: 700px 700px; /* adjust strength */
+  background-color: #f8fafc;   /* fallback */
 }
+
 
 
 h1 {

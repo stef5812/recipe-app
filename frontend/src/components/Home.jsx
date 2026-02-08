@@ -11,6 +11,7 @@ import viewRecipesImg from "../assets/view-recipes.png";
 
 import recipeHeader from "../assets/recipe-header.jpg";
 
+import recipeIcon from "../assets/logo.png"; // adjust name if needed
 
 
 
@@ -109,6 +110,12 @@ export default function Home({
         />
         <div style={hero.overlay} />
         <div style={hero.content}>
+    {/* NEW ICON IMAGE */}
+          <img
+            src={recipeIcon}
+            alt="Recipe icon"
+            style={hero.icon}
+          />          
           <div style={hero.title}>Mum's recipes</div>
           <div style={hero.subtitle}>
             While travelling with my family, my mum discovered wonderful recipes from around the world.
@@ -445,20 +452,32 @@ const hero = {
     objectFit: "cover",
     display: "block",
   },
+
+  icon: {
+    width: 72,
+    height: 72,
+    objectFit: "contain",
+    display: "block",
+    marginBottom: 8,
+    filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.45))",
+    alignSelf: "centre", // or "center"
+  },  
   overlay: {
     position: "absolute",
     inset: 0,
     background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.55) 100%)",
+    zIndex: 1,
   },
   content: {
     position: "absolute",
     inset: 0,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     padding: 18,
     gap: 8,
     color: "white",
+    zIndex: 2,
   },
   title: {
     fontSize: 34,

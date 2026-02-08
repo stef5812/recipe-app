@@ -10,6 +10,8 @@ import { getCategoryCover } from "../lib/categoryCover";
 
 import { formStyles } from "./ui/formStyles";
 
+import topImg from "../assets/top-page.png";
+
 export default function RecipeDetail({ id, onBack }) {
   const [recipe, setRecipe] = useState(null);
   const [err, setErr] = useState("");
@@ -217,6 +219,8 @@ export default function RecipeDetail({ id, onBack }) {
   return (
     <div style={page.container}>
 
+      
+
 <button
   type="button"
   onClick={onBack}
@@ -232,6 +236,7 @@ export default function RecipeDetail({ id, onBack }) {
 >
   ← Back to recipes
 </button>
+
 
       
       <h2 style={page.title}>{recipe.name}</h2>

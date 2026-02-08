@@ -4,6 +4,8 @@ import Section from "./Section";
 import PageContainer from "./PageContainer";
 import { getCategoryCover } from "../lib/categoryCover";
 
+import topImg from "../assets/top-page.png";
+
 
 function getTokenPayload() {
   const token = localStorage.getItem("token");
@@ -65,6 +67,17 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
   return (
     
     <PageContainer title="Recipes">
+
+<div style={styles.topImageWrap}>
+  <img
+    src={topImg}
+    alt="Recipes"
+    style={styles.topImage}
+    loading="lazy"
+  />
+
+</div>
+
 
 {onBack ? (
   <button
@@ -188,6 +201,29 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
 }
 
 const styles = {
+
+  topImageWrap: {
+    maxWidth: 720,
+    margin: "0 auto 16px",  // ← centres horizontally
+    display: "flex",
+    justifyContent: "center", // ← centres the image inside
+    alignItems: "center",
+    borderRadius: 16,
+    padding: 12,
+    border: "1px solid #e5e7eb",
+    background: "#fafafa",
+  },
+  
+  topImage: {
+    width: 160,        // control image size here
+    height: 110,
+    objectFit: "cover",
+    borderRadius: 12,
+    display: "block",
+  },
+  
+  
+
   headerRow: {
     display: "flex",
     gap: 10,
