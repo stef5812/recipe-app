@@ -32,12 +32,14 @@ console.log("✅ recipes router loaded");
 // -------- Schemas --------
 const CategoryEnum = z.enum([
   "ENTREE",
+  "SNACK",
   "SOUP",
   "STARTER",
   "MAIN",
   "DESSERT",
   "CAKE",
   "SWEET",
+  "CONSERVE",
 ]);
 
 const RecipeCreateSchema = z.object({

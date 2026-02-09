@@ -84,12 +84,14 @@ model recipe_steps {
 
 enum recipe_category {
   ENTREE
+  SNACK
   SOUP
   STARTER
   MAIN
   DESSERT
   CAKE
   SWEET
+  CONSERVE
 }
 
 model recipes {
