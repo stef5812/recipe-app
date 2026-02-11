@@ -1,0 +1,186 @@
+📌 Recipe App - NEW CHAT CONTEXT —  (Production & Dev)
+
+Project: Mum’s Recipes (Recipe App)
+Owner: Stefan Dodds
+Domain: https://stefandodds.ie
+Server: Hostinger VPS (Ubuntu)
+Version control: GitHub
+Deployment: git pull on server
+
+────────────────────────
+🎯 PROJECT GOAL
+A full-stack recipe website where:
+- Recipes can be created, edited, and listed
+- Images are uploaded and served
+- Data is stored safely in PostgreSQL
+- Frontend is static (Vite build)
+- Backend is API-only (Express)
+- App is stable during git push → pull → deploy
+
+────────────────────────
+🧱 ARCHITECTURE OVERVIEW
+
+Frontend
+- Vite + React
+- Built with `npm run build`
+- Output: `dist/`
+- Served by Nginx (static files)
+- NO hard-coded ports
+- Uses relative API paths only: `/api/...`
+
+Backend
+- Node.js (ESM)
+- Express
+- Prisma ORM
+- Multer for image uploads
+- Runs independently from frontend
+- Health check endpoint available
+
+Database
+- PostgreSQL 16
+- Runs in Docker container
+- Persistent volume
+- Prisma manages schema & migrations
+
+────────────────────────
+📁 SERVER FILE STRUCTURE
+
+/var/www/recipe-app/
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   ├── vite.config.js
+│   └── dist/               ← built output
+│
+├── backend/
+│   ├── src/
+│   │   └── server.js
+│   ├── prisma/
+│   │   └── schema.prisma
+│   ├── uploads/            ← recipe images (NOT in git)
+│   ├── .env
+│   └── package.json
+│
+└── docker/
+    └── postgres container
+
+────────────────────────
+🌐 NGINX CONFIG (KEY POINTS)
+
+Frontend
+- Serves `/var/www/recipe-app/frontend/dist`
+- Mounted at root or subpath (depending on config)
+
+API
+- `/api/*` → proxied to backend (Node)
+- `/uploads/*` → proxied to backend
+
+Example pattern:
+location /api/ {
+  proxy_pass http://127.0.0.1:XXXX;
+}
+
+location /uploads/ {
+  proxy_pass http://127.0.0.1:XXXX;
+}
+
+Frontend NEVER talks to ports directly.
+
+────────────────────────
+⚙️ VITE CONFIG (IMPORTANT)
+
+vite.config.js:
+- `base` must match Nginx path (e.g. "/" or "/recipes/")
+- Dev proxy may exist, but is ignored in production
+
+Example:
+export default defineConfig({
+  base: "/",
+  server: {
+    proxy: {
+      "/api": "http://127.0.0.1:XXXX",
+      "/uploads": "http://127.0.0.1:XXXX"
+    }
+  }
+})
+
+────────────────────────
+🗄️ DATABASE & PRISMA
+
+- Prisma schema is source of truth
+- Migrations must be run after schema changes
+- Database container must be running BEFORE backend
+
+Common commands:
+- npx prisma migrate dev
+- npx prisma generate
+- docker ps
+- docker start recipes_postgres
+
+────────────────────────
+🚀 DEPLOYMENT FLOW (SAFE)
+
+On local machine:
+1. Make changes
+2. Test locally
+3. git add .
+4. git commit
+5. git push
+
+On server:
+1. cd /var/www/recipe-app
+2. git pull
+3. Backend:
+   - npm install (if needed)
+   - restart backend process
+4. Frontend:
+   - cd frontend
+   - npm install (if needed)
+   - npm run build
+   - dist/ replaces live frontend
+5. nginx -t && systemctl reload nginx
+
+────────────────────────
+🧨 COMMON PITFALLS (KNOWN ISSUES)
+
+❌ Hard-coded localhost or ports in frontend
+❌ Forgetting to rebuild frontend after JSX changes
+❌ Database container stopped
+❌ Prisma client not regenerated
+❌ Uploads folder accidentally added to git
+❌ Vite base path not matching Nginx
+
+────────────────────────
+✅ HEALTH CHECKS
+
+Backend:
+GET /api/health
+→ should return { ok: true }
+
+Uploads:
+- Images should load via /uploads/filename.jpg
+
+Frontend:
+- No console errors
+- API calls relative, not absolute
+
+────────────────────────
+📝 IMPORTANT RULES
+
+- Frontend is disposable (always rebuilt)
+- Backend is stateful (depends on DB + uploads)
+- uploads/ is NEVER committed
+- Database is NEVER recreated unless intentional
+- Nginx is the single entry point
+
+────────────────────────
+🎯 CURRENT STATUS
+
+- App works locally
+- App works on server when deployed correctly
+- Most issues come from missed rebuilds or path mismatches
+- This context should be treated as authoritative
+
+This is for the pull on the server for the recipe-app.
+
+rsync -av --delete /var/www/recipe-app/frontend/dist/ /var/www/recipe-app/frontend-dist/
