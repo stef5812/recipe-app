@@ -1,5 +1,7 @@
+// frontend/src/components/RecipeDetail.jsx
+
 import { useEffect, useState, useCallback } from "react";
-import { api } from "../lib/api";
+import { api, getCurrentUser } from "../lib/api";
 
 import IngredientForm from "../components/IngredientForm";
 import StepsEditor from "../components/StepsEditor";
@@ -7,14 +9,14 @@ import FeedbackForm from "../components/FeedbackForm";
 import Section from "../components/Section";
 
 import { getCategoryCover } from "../lib/categoryCover";
-
 import { formStyles } from "./ui/formStyles";
-
-import topImg from "../assets/top-page.png";
 
 export default function RecipeDetail({ id, onBack }) {
   const [recipe, setRecipe] = useState(null);
   const [err, setErr] = useState("");
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentRoles, setCurrentRoles] = useState([]);
 
   const [showAddIngredient, setShowAddIngredient] = useState(false);
   const [showEditSteps, setShowEditSteps] = useState(false);
@@ -33,40 +35,31 @@ export default function RecipeDetail({ id, onBack }) {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
 
-  const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3001";
-
-
-  function getTokenPayload() {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
-    try {
-      return JSON.parse(atob(token.split(".")[1]));
-    } catch {
-      return null;
-    }
-  }
-  
-
-  const payload = getTokenPayload();
-
-  const tokenUserId =
-    payload?.userId != null ? String(payload.userId) :
-    payload?.user_id != null ? String(payload.user_id) :
-    payload?.sub != null ? String(payload.sub) :
-    null;
-  
-  const isAdmin = Boolean(payload?.isAdmin);
-  
-  const recipeOwnerId = recipe?.user_id != null ? String(recipe.user_id) : null;
-  const canEdit = Boolean(isAdmin || (tokenUserId && recipeOwnerId && tokenUserId === recipeOwnerId));
-   
-  
-
   function resolveSrc(url) {
-    const raw = String(url ?? "").replaceAll("\\", "/");
-    if (raw.startsWith("/uploads/")) return `${API_BASE}${raw}`;
-    if (raw.startsWith("uploads/")) return `${API_BASE}/${raw}`;
-    return raw;
+    const raw = String(url ?? "").trim().replaceAll("\\", "/");
+    if (!raw) return "";
+  
+    // already absolute
+    if (/^https?:\/\//i.test(raw)) return raw;
+  
+    // already correct
+    if (raw.startsWith("/uploads/")) return raw;
+    if (raw.startsWith("uploads/")) return `/${raw}`;
+  
+    // if backend path was stored, strip everything before /uploads/
+    const uploadsIndex = raw.indexOf("/uploads/");
+    if (uploadsIndex !== -1) {
+      return raw.slice(uploadsIndex);
+    }
+  
+    // if it contains "uploads/" without leading slash
+    const plainUploadsIndex = raw.indexOf("uploads/");
+    if (plainUploadsIndex !== -1) {
+      return `/${raw.slice(plainUploadsIndex)}`;
+    }
+  
+    // bare filename fallback
+    return `/uploads/${raw}`;
   }
 
   const load = useCallback(async () => {
@@ -83,6 +76,32 @@ export default function RecipeDetail({ id, onBack }) {
     load();
   }, [load]);
 
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const data = await getCurrentUser();
+        setCurrentUser(data?.user || null);
+        setCurrentRoles(Array.isArray(data?.appRoles) ? data.appRoles : []);
+      } catch {
+        setCurrentUser(null);
+        setCurrentRoles([]);
+      }
+    }
+
+    loadCurrentUser();
+  }, []);
+
+  const authUserId = currentUser?.id != null ? String(currentUser.id) : null;
+  const recipeOwnerAuthUserId =
+  recipe?.owner?.auth_user_id != null ? String(recipe.owner.auth_user_id) : null;
+  
+  const recipeRoleEntry = currentRoles.find((r) => r.app === "RECIPE_APP");
+  const isAdmin = recipeRoleEntry?.role === "ADMIN";
+  
+  const canEdit = Boolean(
+    isAdmin || (authUserId && recipeOwnerAuthUserId && authUserId === recipeOwnerAuthUserId)
+  );
+
   async function uploadPrimaryImage(file) {
     if (!file) return;
 
@@ -92,14 +111,12 @@ export default function RecipeDetail({ id, onBack }) {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      fd.append("media_type", "photo"); // backend normalizes to "image"
-      fd.append("is_primary", "true"); // cover image
+      fd.append("media_type", "photo");
+      fd.append("is_primary", "true");
 
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(`${API_BASE}/recipes/${id}/media/upload`, {
+      const res = await fetch(`/api/recipes/${id}/media/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
         body: fd,
       });
 
@@ -119,13 +136,11 @@ export default function RecipeDetail({ id, onBack }) {
 
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("media_type", mediaType); // "image" or "video"
+    fd.append("media_type", mediaType);
 
-    const token = localStorage.getItem("token");
-
-    const res = await fetch(`${API_BASE}/recipes/steps/${stepId}/media/upload`, {
+    const res = await fetch(`/api/recipes/steps/${stepId}/media/upload`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
       body: fd,
     });
 
@@ -152,7 +167,6 @@ export default function RecipeDetail({ id, onBack }) {
     try {
       await api(`/recipes/${recipeId}/ingredients/${ingredientId}`, {
         method: "DELETE",
-        auth: true,
       });
       await load();
     } catch (e) {
@@ -177,14 +191,12 @@ export default function RecipeDetail({ id, onBack }) {
 
       const body = {};
       if (name) body.ingredient_name = name;
-
       body.amount = amount === "" ? null : amount;
       body.unit = unit === "" ? null : unit;
       body.note = note === "" ? null : note;
 
       await api(`/recipes/${recipeId}/ingredients/${ingredientId}`, {
         method: "PATCH",
-        auth: true,
         body,
       });
 
@@ -218,32 +230,24 @@ export default function RecipeDetail({ id, onBack }) {
 
   return (
     <div style={page.container}>
+      <button
+        type="button"
+        onClick={onBack}
+        style={{
+          marginBottom: 12,
+          border: "1px solid #e5e7eb",
+          borderRadius: 10,
+          padding: "6px 10px",
+          background: "white",
+          cursor: "pointer",
+          fontSize: 13,
+        }}
+      >
+        ← Back to recipes
+      </button>
 
-      
-
-<button
-  type="button"
-  onClick={onBack}
-  style={{
-    marginBottom: 12,
-    border: "1px solid #e5e7eb",
-    borderRadius: 10,
-    padding: "6px 10px",
-    background: "white",
-    cursor: "pointer",
-    fontSize: 13,
-  }}
->
-  ← Back to recipes
-</button>
-
-
-      
       <h2 style={page.title}>{recipe.name}</h2>
 
-      
-
-      {/* Cover image upload (recipe-level) */}
       {canEdit ? (
         <div style={{ margin: "12px 0" }}>
           <label style={fileBtnStyle}>
@@ -272,22 +276,20 @@ export default function RecipeDetail({ id, onBack }) {
         </div>
       ) : null}
 
-{/* Cover image display (or category fallback) */}
-<div style={page.heroImageWrap}>
-  <img
-    src={
-      primaryImage && primaryImage.media_type === "image"
-        ? resolveSrc(primaryImage.url)
-        : getCategoryCover(recipe.category)
-    }
-    alt={primaryImage?.caption || recipe.name}
-    style={page.heroImage}
-  />
-  {primaryImage?.caption ? (
-    <div style={page.heroCaption}>{primaryImage.caption}</div>
-  ) : null}
-</div>
-
+      <div style={page.heroImageWrap}>
+        <img
+          src={
+            primaryImage && primaryImage.media_type === "image"
+              ? resolveSrc(primaryImage.url)
+              : getCategoryCover(recipe.category)
+          }
+          alt={primaryImage?.caption || recipe.name}
+          style={page.heroImage}
+        />
+        {primaryImage?.caption ? (
+          <div style={page.heroCaption}>{primaryImage.caption}</div>
+        ) : null}
+      </div>
 
       <div style={page.sections}>
         <Section title="Ingredients">
@@ -402,7 +404,6 @@ export default function RecipeDetail({ id, onBack }) {
                 <li key={String(s.id)} style={{ marginBottom: 16 }}>
                   <div>{s.instruction}</div>
 
-                  {/* existing step media */}
                   {s.recipe_step_media?.length ? (
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
                       {s.recipe_step_media.map((m) =>
@@ -436,7 +437,6 @@ export default function RecipeDetail({ id, onBack }) {
                     </div>
                   ) : null}
 
-                  {/* upload buttons per step (only one set) */}
                   {canEdit && !showEditSteps ? (
                     <div style={{ marginTop: 8 }}>
                       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -491,22 +491,23 @@ export default function RecipeDetail({ id, onBack }) {
 
           {canEdit ? (
             <>
-<button type="button" onClick={() => window.location.assign(`/recipe-app/recipes/${id}/steps`)}>
-  {hasSteps ? "Edit steps" : "Add steps"}
-</button>
+              <button
+                type="button"
+                onClick={() => window.location.assign(`/recipe-app/recipes/${id}/steps`)}
+              >
+                {hasSteps ? "Edit steps" : "Add steps"}
+              </button>
 
-
-{showEditSteps ? (
-  <StepsEditor
-    recipeId={id}
-    initialSteps={recipe.recipe_steps}
-    onSaved={() => {
-      load();
-      setShowEditSteps(false);
-    }}
-  />
-) : null}
-
+              {showEditSteps ? (
+                <StepsEditor
+                  recipeId={id}
+                  initialSteps={recipe.recipe_steps}
+                  onSaved={() => {
+                    load();
+                    setShowEditSteps(false);
+                  }}
+                />
+              ) : null}
             </>
           ) : null}
         </Section>

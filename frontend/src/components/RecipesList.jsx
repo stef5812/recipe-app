@@ -1,3 +1,5 @@
+// frontend/src/components/RecipeList.jsx
+
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import Section from "./Section";
@@ -22,13 +24,25 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3001";
-
   function resolveSrc(url) {
-    const raw = String(url ?? "").replaceAll("\\", "/");
-    if (raw.startsWith("/uploads/")) return `${API_BASE}${raw}`;
-    if (raw.startsWith("uploads/")) return `${API_BASE}/${raw}`;
-    return raw;
+    const raw = String(url ?? "").trim().replaceAll("\\", "/");
+    if (!raw) return "";
+  
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (raw.startsWith("/uploads/")) return raw;
+    if (raw.startsWith("uploads/")) return `/${raw}`;
+  
+    const uploadsIndex = raw.indexOf("/uploads/");
+    if (uploadsIndex !== -1) {
+      return raw.slice(uploadsIndex);
+    }
+  
+    const plainUploadsIndex = raw.indexOf("uploads/");
+    if (plainUploadsIndex !== -1) {
+      return `/${raw.slice(plainUploadsIndex)}`;
+    }
+  
+    return `/uploads/${raw}`;
   }
 
   const isAdmin = useMemo(() => {

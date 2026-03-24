@@ -1,3 +1,5 @@
+// backend/src/routes/recipes.js
+
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
@@ -11,7 +13,9 @@ import { dirname, join } from "path";
 
 const router = Router();
 
-const uploadsDir = path.join(process.cwd(), "uploads");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const uploadsDir = path.join(__dirname, "..", "..", "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -182,6 +186,7 @@ router.get("/search", async (req, res) => {
 
 
 // Recipe details (includes ingredients/steps/media/feedback)
+// Recipe details (includes ingredients/steps/media/feedback + owner mapping)
 router.get("/:id", async (req, res) => {
   let id;
   try {
@@ -190,25 +195,45 @@ router.get("/:id", async (req, res) => {
     return res.status(400).json({ error: "Bad id" });
   }
 
-  const recipe = await prisma.recipes.findUnique({
-    where: { id },
-    include: {
-      recipe_ingredients: { orderBy: [{ sort_order: "asc" }, { id: "asc" }] },
-      recipe_media: {
-        orderBy: [{ is_primary: "desc" }, { sort_order: "asc" }, { id: "asc" }],
-      },
-      recipe_steps: {
-        orderBy: [{ step_number: "asc" }],
-        include: {
-          recipe_step_media: { orderBy: [{ sort_order: "asc" }, { id: "asc" }] },
+  try {
+    const recipe = await prisma.recipes.findUnique({
+      where: { id },
+      include: {
+        recipe_ingredients: { orderBy: [{ sort_order: "asc" }, { id: "asc" }] },
+        recipe_media: {
+          orderBy: [{ is_primary: "desc" }, { sort_order: "asc" }, { id: "asc" }],
         },
+        recipe_steps: {
+          orderBy: [{ step_number: "asc" }],
+          include: {
+            recipe_step_media: { orderBy: [{ sort_order: "asc" }, { id: "asc" }] },
+          },
+        },
+        recipe_feedback: { orderBy: [{ created_at: "desc" }] },
       },
-      recipe_feedback: { orderBy: [{ created_at: "desc" }] },
-    },
-  });
+    });
 
-  if (!recipe) return res.status(404).json({ error: "Not found" });
-  return res.json(recipe);
+    if (!recipe) {
+      return res.status(404).json({ error: "Not found" });
+    }
+
+    const owner = await prisma.users.findUnique({
+      where: { id: recipe.user_id },
+      select: {
+        id: true,
+        username: true,
+        auth_user_id: true,
+      },
+    });
+
+    return res.json({
+      ...recipe,
+      owner,
+    });
+  } catch (err) {
+    console.error("GET RECIPE DETAIL ERROR:", err);
+    return res.status(500).json({ error: err.message ?? String(err) });
+  }
 });
 
 // Create recipe (protected)

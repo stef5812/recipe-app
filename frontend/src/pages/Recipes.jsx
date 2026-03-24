@@ -1,3 +1,5 @@
+// frontend/src/pages/Recipes.jsx
+
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 

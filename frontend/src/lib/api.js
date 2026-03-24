@@ -1,45 +1,72 @@
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3001";
+// frontend/src/lib/api.js
 
-function getToken() {
-  return localStorage.getItem("token");
-}
+export const BASE = import.meta.env.DEV ? "" : "/recipe-app";
+export const AUTH_BASE = import.meta.env.DEV ? "" : "https://auth.stefandodds.ie";
 
-export async function api(path, { method = "GET", body, auth = false } = {}) {
-  const headers = { "Content-Type": "application/json" };
-
-  if (auth) {
-    const token = getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  const text = await res.text();
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
+async function readResponse(res) {
+  const ct = res.headers.get("content-type") || "";
+  const data = ct.includes("application/json") ? await res.json() : await res.text();
 
   if (!res.ok) {
-    const msg = data?.error || data?.message || `HTTP ${res.status}`;
-    throw new Error(msg);
+    const msg =
+      (typeof data === "string" && data) ||
+      data?.error ||
+      data?.message ||
+      (Array.isArray(data?.issues) ? JSON.stringify(data.issues) : "") ||
+      JSON.stringify(data);
+
+    throw new Error(msg || `Request failed (${res.status})`);
   }
 
   return data;
 }
 
+// Recipe App API
+export async function api(path, opts = {}) {
+  const isForm = opts.body instanceof FormData;
+  const apiPath = path.startsWith("/api") ? path : `/api${path}`;
+  const url = `${BASE}${apiPath}`;
 
+  const res = await fetch(url, {
+    ...opts,
+    credentials: "include",
+    headers: {
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
+      ...(opts.headers || {}),
+    },
+  });
+
+  return readResponse(res);
+}
+
+// Central Auth API
+export async function authApi(path, opts = {}) {
+  const authPath = path.startsWith("/auth") ? path : `/auth${path}`;
+  const url = `${AUTH_BASE}${authPath}`;
+
+  const res = await fetch(url, {
+    ...opts,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(opts.headers || {}),
+    },
+  });
+
+  return readResponse(res);
+}
+
+export async function getCurrentUser() {
+  return authApi("/me");
+}
+
+export async function logout() {
+  return authApi("/logout", { method: "POST" });
+}
 
 export async function addIngredient(recipeId, ingredient) {
-  // expects ingredient: { name, amount, unit, note }
-  return request(`/recipes/${recipeId}/ingredients`, {
+  return api(`/recipes/${recipeId}/ingredients`, {
     method: "POST",
-    body: ingredient,
+    body: JSON.stringify(ingredient),
   });
 }

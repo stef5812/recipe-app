@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model recipe_feedback {
   id         BigInt   @id @default(autoincrement())
@@ -32,8 +31,8 @@ model recipe_ingredients {
   unit            String?  @db.VarChar(20)
   note            String?  @db.VarChar(255)
   sort_order      Int      @default(1)
+  stage_name      String?  @db.VarChar(80)
   stage_number    Int      @default(1)
-  stage_name      String?  @db.VarChar(80)  
   recipes         recipes  @relation(fields: [recipe_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([recipe_id], map: "idx_ingredients_recipe_id")
@@ -82,28 +81,16 @@ model recipe_steps {
   @@index([recipe_id], map: "idx_steps_recipe_id")
 }
 
-enum recipe_category {
-  ENTREE
-  SNACK
-  SOUP
-  STARTER
-  MAIN
-  DESSERT
-  CAKE
-  SWEET
-  CONSERVE
-}
-
 model recipes {
   id                 BigInt               @id @default(autoincrement())
   user_id            BigInt
   source             String?              @db.VarChar(255)
   name               String               @db.VarChar(120)
   description        String?
-  country            String               @default("Not known") @db.VarChar(80)
-  category           recipe_category?     // optional (or make required if you prefer)
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
   updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  category           recipe_category?
+  country            String               @default("Not known") @db.VarChar(80)
   recipe_feedback    recipe_feedback[]
   recipe_ingredients recipe_ingredients[]
   recipe_media       recipe_media[]
@@ -117,9 +104,24 @@ model users {
   id              BigInt            @id @default(autoincrement())
   username        String            @unique @db.VarChar(50)
   password_hash   String
-  is_admin        Boolean           @default(false)
   created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  is_admin        Boolean           @default(false)
+  email           String?
+  auth_user_id    String?
   recipe_feedback recipe_feedback[]
   recipes         recipes[]
+
+  @@index([auth_user_id])
 }
 
+enum recipe_category {
+  ENTREE
+  SOUP
+  STARTER
+  MAIN
+  DESSERT
+  CAKE
+  SWEET
+  SNACK
+  CONSERVE
+}

@@ -15,7 +15,7 @@ import recipeIcon from "../assets/logo.png"; // adjust name if needed
 
 
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3001";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3002";
 const CTA_ICON_width = 150;
 const CTA_ICON_height = 150;
 

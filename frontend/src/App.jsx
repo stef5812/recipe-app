@@ -1,5 +1,6 @@
 // frontend/src/App.jsx
-import { useMemo, useState } from "react";
+
+import { useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -19,26 +20,37 @@ import StepsEditor from "./components/StepsEditor";
 
 import PageContainer from "./components/PageContainer";
 import Section from "./components/Section";
-import { api } from "./lib/api";
+
+const AUTH_BASE = import.meta.env.VITE_AUTH_BASE ?? "http://localhost:5173";
+const AUTH_API_BASE = import.meta.env.VITE_AUTH_API_BASE ?? "http://localhost:3001";
 
 /** ===== helpers ===== */
-function hasToken() {
-  return !!localStorage.getItem("token");
-}
-
-function RequireAuth({ children }) {
-  const authed = hasToken();
-  if (!authed) return <Navigate to="/login" replace />;
+function RequireAuth({ authed, children }) {
+  if (!authed) return <Navigate to="/" replace />;
   return children;
 }
 
-/** Optional but handy */
 function ErrorBoundary({ children }) {
   return children;
 }
 
-/** ===== route wrappers ===== */
+function goToAuthLogin() {
+  const from = "recipe-app";
+  const next = "http://localhost:5174/recipe-app/";
 
+  window.location.href =
+    `${AUTH_BASE}/login?from=${encodeURIComponent(from)}&next=${encodeURIComponent(next)}`;
+}
+
+function goToAuthRegister() {
+  const from = "recipe-app";
+  const next = "http://localhost:5174/recipe-app/";
+
+  window.location.href =
+    `${AUTH_BASE}/register?from=${encodeURIComponent(from)}&next=${encodeURIComponent(next)}`;
+}
+
+/** ===== route wrappers ===== */
 function RecipeDetailRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -51,10 +63,6 @@ function RecipeDetailRoute() {
   );
 }
 
-/**
- * Ingredients-only page.
- * IMPORTANT: This renders ONLY IngredientForm
- */
 function IngredientsRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -80,9 +88,7 @@ function IngredientsRoute() {
       <Section title="Ingredients">
         <IngredientForm
           recipeId={id}
-          // Next takes you to the dedicated steps page
           onNext={() => navigate(`/recipes/${id}/steps`)}
-          // Done can take you back to recipe detail if you want
           onDone={() => navigate(`/recipes/${id}`, { replace: true })}
         />
       </Section>
@@ -90,17 +96,10 @@ function IngredientsRoute() {
   );
 }
 
-/**
- * Steps-only page.
- * IMPORTANT: This renders ONLY StepsEditor
- * (no IngredientForm)
- */
 function StepsWizardRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // If you want initialSteps here, fetch them (optional).
-  // But your StepsEditor works without initialSteps in wizard mode.
   return (
     <PageContainer title="Add steps">
       <button
@@ -134,24 +133,60 @@ function StepsWizardRoute() {
 export default function App() {
   const navigate = useNavigate();
 
-  const [authed, setAuthed] = useState(hasToken());
+  const [authed, setAuthed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  function logout() {
-    localStorage.removeItem("token");
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          setAuthed(false);
+          return;
+        }
+
+        const data = await res.json();
+        setAuthed(!!data?.user);
+      } catch (err) {
+        setAuthed(false);
+      } finally {
+        setAuthChecked(true);
+      }
+    }
+
+    checkAuth();
+  }, []);
+
+  async function logout() {
+    try {
+      await fetch(`${AUTH_API_BASE}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      // ignore network errors here; still clear local auth state
+    }
+
     setAuthed(false);
     navigate("/", { replace: true });
   }
 
+  if (!authChecked) {
+    return <div style={{ padding: 40 }}>Checking login...</div>;
+  }
+
   return (
     <Routes>
-      {/* Home (PUBLIC) */}
       <Route
         path="/"
         element={
           <Home
             isAuthed={authed}
-            onGoLogin={() => navigate("/login")}
-            onRegister={() => navigate("/register")}
+            onGoLogin={goToAuthLogin}
+            onRegister={goToAuthRegister}
             onGoRecipes={() => navigate("/recipes")}
             onCreateRecipe={() => navigate("/recipes/new")}
             onOpenRecipe={(id) => navigate(`/recipes/${id}`)}
@@ -160,7 +195,6 @@ export default function App() {
         }
       />
 
-      {/* Login */}
       <Route
         path="/login"
         element={
@@ -178,7 +212,6 @@ export default function App() {
         }
       />
 
-      {/* Register */}
       <Route
         path="/register"
         element={
@@ -193,11 +226,10 @@ export default function App() {
         }
       />
 
-      {/* Recipes list (PROTECTED) */}
       <Route
         path="/recipes"
         element={
-          <RequireAuth>
+          <RequireAuth authed={authed}>
             <RecipesList
               onOpen={(id) => navigate(`/recipes/${id}`)}
               onNew={() => navigate("/recipes/new")}
@@ -207,13 +239,11 @@ export default function App() {
         }
       />
 
-      {/* Create recipe (PROTECTED) */}
       <Route
         path="/recipes/new"
         element={
-          <RequireAuth>
+          <RequireAuth authed={authed}>
             <RecipeCreate
-              // ✅ go straight to ingredients page after creation
               onCreated={(id) => navigate(`/recipes/${id}/ingredients`, { replace: true })}
               onBack={() => navigate("/recipes")}
             />
@@ -221,31 +251,28 @@ export default function App() {
         }
       />
 
-      {/* Ingredients step (PROTECTED) */}
       <Route
         path="/recipes/:id/ingredients"
         element={
-          <RequireAuth>
+          <RequireAuth authed={authed}>
             <IngredientsRoute />
           </RequireAuth>
         }
       />
 
-      {/* Steps step (PROTECTED) */}
       <Route
         path="/recipes/:id/steps"
         element={
-          <RequireAuth>
+          <RequireAuth authed={authed}>
             <StepsWizardRoute />
           </RequireAuth>
         }
       />
 
-      {/* Recipe detail (PROTECTED) */}
       <Route
         path="/recipes/:id"
         element={
-          <RequireAuth>
+          <RequireAuth authed={authed}>
             <ErrorBoundary>
               <RecipeDetailRoute />
             </ErrorBoundary>
@@ -253,7 +280,6 @@ export default function App() {
         }
       />
 
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
