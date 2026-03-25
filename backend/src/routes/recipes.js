@@ -624,7 +624,7 @@ router.post("/:id/media/upload", requireAuth, upload.single("file"), async (req,
     }
 
     // Save URL pointing to the static uploads route
-    const url = `/uploads/${req.file.filename}`;
+    const url = `/recipe-app/api/uploads/${req.file.filename}`;
 
     const media = await prisma.recipe_media.create({
       data: {
@@ -759,7 +759,7 @@ router.post(
       }
 
       // Save URL pointing to the static uploads route
-      const url = `/uploads/${req.file.filename}`;
+      const url = `/recipe-app/api/uploads/${req.file.filename}`;
 
       const media = await prisma.recipe_step_media.create({
         data: {
@@ -869,12 +869,12 @@ router.delete("/:id/media/:mediaId", requireAuth, async (req, res) => {
     await prisma.recipe_media.delete({ where: { id: mediaId } });
 
     // If local upload, delete file too
-    if (typeof media.url === "string" && media.url.startsWith("/uploads/")) {
+    if (typeof media.url === "string" && media.url.startsWith("/recipe-app/api/uploads/")) {
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = dirname(__filename);
       const uploadsDir = join(__dirname, "..", "uploads"); // routes/.. => backend/uploads
 
-      const filename = media.url.replace("/uploads/", "");
+      const filename = media.url.replace("/recipe-app/api/uploads/", "");
       const filePath = path.join(uploadsDir, filename);
 
       fs.unlink(filePath, (err) => {
@@ -915,7 +915,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
 
     const toDelete = [...media, ...stepMedia]
       .map((m) => m.url)
-      .filter((u) => typeof u === "string" && u.startsWith("/uploads/"));
+      .filter((u) => typeof u === "string" && u.startsWith("/recipe-app/api/uploads/"));
 
     // Delete DB records (transaction keeps it consistent)
     await prisma.$transaction(async (tx) => {
@@ -934,7 +934,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
 
     // Remove files from disk (best-effort)
     for (const url of toDelete) {
-      const filename = url.replace("/uploads/", "");
+      const filename = url.replace("/recipe-app/api/uploads/", "");
       const filePath = path.join(uploadsDir, filename);
       fs.unlink(filePath, () => {});
     }
