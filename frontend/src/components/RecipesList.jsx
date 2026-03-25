@@ -29,20 +29,59 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
     if (!raw) return "";
   
     if (/^https?:\/\//i.test(raw)) return raw;
-    if (raw.startsWith("/uploads/")) return raw;
-    if (raw.startsWith("uploads/")) return `/${raw}`;
+  
+    const isDev = import.meta.env.DEV;
+  
+    if (isDev) {
+      if (raw.startsWith("/recipe-app/api/uploads/")) {
+        return raw.replace("/recipe-app/api", "");
+      }
+      if (raw.startsWith("recipe-app/api/uploads/")) {
+        return `/${raw.replace(/^recipe-app\/api/, "")}`;
+      }
+      if (raw.startsWith("/uploads/")) return raw;
+      if (raw.startsWith("uploads/")) return `/${raw}`;
+  
+      const recipeUploadsIndex = raw.indexOf("/recipe-app/api/uploads/");
+      if (recipeUploadsIndex !== -1) {
+        return raw.slice(recipeUploadsIndex).replace("/recipe-app/api", "");
+      }
+  
+      const uploadsIndex = raw.indexOf("/uploads/");
+      if (uploadsIndex !== -1) {
+        return raw.slice(uploadsIndex);
+      }
+  
+      return `/uploads/${raw}`;
+    }
+  
+    if (raw.startsWith("/recipe-app/api/uploads/")) return raw;
+    if (raw.startsWith("recipe-app/api/uploads/")) return `/${raw}`;
+  
+    if (raw.startsWith("/uploads/")) return `/recipe-app/api${raw}`;
+    if (raw.startsWith("uploads/")) return `/recipe-app/api/${raw}`;
+  
+    const recipeUploadsIndex = raw.indexOf("/recipe-app/api/uploads/");
+    if (recipeUploadsIndex !== -1) {
+      return raw.slice(recipeUploadsIndex);
+    }
+  
+    const plainRecipeUploadsIndex = raw.indexOf("recipe-app/api/uploads/");
+    if (plainRecipeUploadsIndex !== -1) {
+      return `/${raw.slice(plainRecipeUploadsIndex)}`;
+    }
   
     const uploadsIndex = raw.indexOf("/uploads/");
     if (uploadsIndex !== -1) {
-      return raw.slice(uploadsIndex);
+      return `/recipe-app/api${raw.slice(uploadsIndex)}`;
     }
   
     const plainUploadsIndex = raw.indexOf("uploads/");
     if (plainUploadsIndex !== -1) {
-      return `/${raw.slice(plainUploadsIndex)}`;
+      return `/recipe-app/api/${raw.slice(plainUploadsIndex)}`;
     }
   
-    return `/uploads/${raw}`;
+    return raw;
   }
 
   const isAdmin = useMemo(() => {
