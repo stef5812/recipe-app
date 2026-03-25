@@ -7,6 +7,7 @@ import {
   Routes,
   useNavigate,
   useParams,
+  useLocation,
 } from "react-router-dom";
 
 import Login from "./components/Login";
@@ -21,44 +22,42 @@ import StepsEditor from "./components/StepsEditor";
 import PageContainer from "./components/PageContainer";
 import Section from "./components/Section";
 
-const AUTH_BASE = import.meta.env.DEV
-  ? (import.meta.env.VITE_AUTH_BASE ?? "http://localhost:5173")
-  : (import.meta.env.VITE_AUTH_BASE ?? "https://auth.stefandodds.ie");
+const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE || "http://localhost:5173").replace(/\/+$/, "");
+const AUTH_API_BASE = (import.meta.env.VITE_AUTH_API_BASE || "http://localhost:3001").replace(/\/+$/, "");
+const APP_BASE_URL = (import.meta.env.VITE_APP_BASE_URL || "http://localhost:5174").replace(/\/+$/, "");
 
-const AUTH_API_BASE = import.meta.env.DEV
-  ? (import.meta.env.VITE_AUTH_API_BASE ?? "http://localhost:3001")
-  : (import.meta.env.VITE_AUTH_API_BASE ?? "https://auth.stefandodds.ie");
+function getAuthRedirectUrl(path = "/recipe-app/") {
+  return `${APP_BASE_URL}${path}`;
+}
+
+function redirectToAuth(mode = "login", path = "/recipe-app/") {
+  const from = "recipe-app";
+  const next = getAuthRedirectUrl(path);
+
+  window.location.assign(
+    `${AUTH_BASE}/${mode}?from=${encodeURIComponent(from)}&next=${encodeURIComponent(next)}`
+  );
+}
 
 /** ===== helpers ===== */
-function RequireAuth({ authed, children }) {
-  if (!authed) return <Navigate to="/" replace />;
+function RequireAuth({ authed, authChecked, children }) {
+  const location = useLocation();
+
+  if (!authChecked) {
+    return <div style={{ padding: 40 }}>Checking login...</div>;
+  }
+
+  if (!authed) {
+    const nextPath = `/recipe-app${location.pathname}${location.search}${location.hash}`;
+    redirectToAuth("login", nextPath);
+    return <div style={{ padding: 40 }}>Redirecting to login...</div>;
+  }
+
   return children;
 }
 
 function ErrorBoundary({ children }) {
   return children;
-}
-
-function getNextUrl() {
-  return import.meta.env.DEV
-    ? "http://localhost:5174/recipe-app/"
-    : "https://stefandodds.ie/recipe-app/";
-}
-
-function goToAuthLogin() {
-  const from = "recipe-app";
-  const next = getNextUrl();
-
-  window.location.href =
-    `${AUTH_BASE}/login?from=${encodeURIComponent(from)}&next=${encodeURIComponent(next)}`;
-}
-
-function goToAuthRegister() {
-  const from = "recipe-app";
-  const next = getNextUrl();
-
-  window.location.href =
-    `${AUTH_BASE}/register?from=${encodeURIComponent(from)}&next=${encodeURIComponent(next)}`;
 }
 
 /** ===== route wrappers ===== */
@@ -196,8 +195,8 @@ export default function App() {
         element={
           <Home
             isAuthed={authed}
-            onGoLogin={goToAuthLogin}
-            onRegister={goToAuthRegister}
+            onGoLogin={() => redirectToAuth("login", "/recipe-app/")}
+            onRegister={() => redirectToAuth("register", "/recipe-app/")}
             onGoRecipes={() => navigate("/recipes")}
             onCreateRecipe={() => navigate("/recipes/new")}
             onOpenRecipe={(id) => navigate(`/recipes/${id}`)}
@@ -240,7 +239,7 @@ export default function App() {
       <Route
         path="/recipes"
         element={
-          <RequireAuth authed={authed}>
+          <RequireAuth authed={authed} authChecked={authChecked}>
             <RecipesList
               onOpen={(id) => navigate(`/recipes/${id}`)}
               onNew={() => navigate("/recipes/new")}
@@ -253,7 +252,7 @@ export default function App() {
       <Route
         path="/recipes/new"
         element={
-          <RequireAuth authed={authed}>
+          <RequireAuth authed={authed} authChecked={authChecked}>
             <RecipeCreate
               onCreated={(id) => navigate(`/recipes/${id}/ingredients`, { replace: true })}
               onBack={() => navigate("/recipes")}
@@ -265,7 +264,7 @@ export default function App() {
       <Route
         path="/recipes/:id/ingredients"
         element={
-          <RequireAuth authed={authed}>
+          <RequireAuth authed={authed} authChecked={authChecked}>
             <IngredientsRoute />
           </RequireAuth>
         }
@@ -274,7 +273,7 @@ export default function App() {
       <Route
         path="/recipes/:id/steps"
         element={
-          <RequireAuth authed={authed}>
+          <RequireAuth authed={authed} authChecked={authChecked}>
             <StepsWizardRoute />
           </RequireAuth>
         }
@@ -283,7 +282,7 @@ export default function App() {
       <Route
         path="/recipes/:id"
         element={
-          <RequireAuth authed={authed}>
+          <RequireAuth authed={authed} authChecked={authChecked}>
             <ErrorBoundary>
               <RecipeDetailRoute />
             </ErrorBoundary>
