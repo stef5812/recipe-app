@@ -21,8 +21,13 @@ import StepsEditor from "./components/StepsEditor";
 import PageContainer from "./components/PageContainer";
 import Section from "./components/Section";
 
-const AUTH_BASE = import.meta.env.VITE_AUTH_BASE ?? "http://localhost:5173";
-const AUTH_API_BASE = import.meta.env.VITE_AUTH_API_BASE ?? "http://localhost:3001";
+const AUTH_BASE = import.meta.env.DEV
+  ? (import.meta.env.VITE_AUTH_BASE ?? "http://localhost:5173")
+  : (import.meta.env.VITE_AUTH_BASE ?? "https://auth.stefandodds.ie");
+
+const AUTH_API_BASE = import.meta.env.DEV
+  ? (import.meta.env.VITE_AUTH_API_BASE ?? "http://localhost:3001")
+  : (import.meta.env.VITE_AUTH_API_BASE ?? "https://auth.stefandodds.ie");
 
 /** ===== helpers ===== */
 function RequireAuth({ authed, children }) {
@@ -34,9 +39,15 @@ function ErrorBoundary({ children }) {
   return children;
 }
 
+function getNextUrl() {
+  return import.meta.env.DEV
+    ? "http://localhost:5174/recipe-app/"
+    : "https://stefandodds.ie/recipe-app/";
+}
+
 function goToAuthLogin() {
   const from = "recipe-app";
-  const next = "http://localhost:5174/recipe-app/";
+  const next = getNextUrl();
 
   window.location.href =
     `${AUTH_BASE}/login?from=${encodeURIComponent(from)}&next=${encodeURIComponent(next)}`;
@@ -44,7 +55,7 @@ function goToAuthLogin() {
 
 function goToAuthRegister() {
   const from = "recipe-app";
-  const next = "http://localhost:5174/recipe-app/";
+  const next = getNextUrl();
 
   window.location.href =
     `${AUTH_BASE}/register?from=${encodeURIComponent(from)}&next=${encodeURIComponent(next)}`;
@@ -162,7 +173,7 @@ export default function App() {
 
   async function logout() {
     try {
-      await fetch(`${AUTH_API_BASE}/logout`, {
+      await fetch(`${AUTH_API_BASE}/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
