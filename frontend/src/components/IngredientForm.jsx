@@ -15,7 +15,6 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
 
   const navigate = useNavigate();
 
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,7 +33,7 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
     unit: "",
     note: "",
     stage_number: 1,
-    stage_name: "",    
+    stage_name: "",
   });
   const [editBusy, setEditBusy] = useState(false);
   const [editErr, setEditErr] = useState("");
@@ -99,14 +98,13 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
             : Number(prev.amount.replace(",", ".").trim()),
         unit: prev.unit.trim() || null,
         note: prev.note.trim() || null,
-
         stage_number: stageNumber || 1,
-        stage_name: stageName.trim() || null,        
+        stage_name: stageName.trim() || null,
       };
 
       await api(`/recipes/${id}/ingredients`, {
         method: "POST",
-        body: payload,
+        body: JSON.stringify(payload),
         auth: true,
       });
 
@@ -141,26 +139,25 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
       unit: i.unit ?? "",
       note: i.note ?? "",
       stage_number: i.stage_number ?? 1,
-      stage_name: i.stage_name ?? "",      
+      stage_name: i.stage_name ?? "",
     });
   }
 
   async function saveEdit(ingredientId) {
     setEditErr("");
     setEditBusy(true);
-  
+
     try {
       const name = String(editIng.ingredient_name ?? "").trim();
       const amountStr = String(editIng.amount ?? "").trim();
       const unit = String(editIng.unit ?? "").trim();
       const note = String(editIng.note ?? "").trim();
-  
+
       const stageNumRaw = String(editIng.stage_number ?? "").trim();
       const stageNum = stageNumRaw === "" ? null : Number(stageNumRaw);
-  
+
       const stageName = String(editIng.stage_name ?? "").trim();
-  
-      // ✅ If EVERYTHING is empty (including stage fields), don’t PATCH
+
       const nothing =
         !name &&
         amountStr === "" &&
@@ -168,34 +165,31 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
         note === "" &&
         (stageNumRaw === "" || stageNum === null) &&
         stageName === "";
-  
+
       if (nothing) {
         setEditErr("Nothing to save.");
         return;
       }
-  
-      // ✅ Build PATCH body
+
       const body = {};
-  
+
       if (name) body.ingredient_name = name;
-  
-      // allow clearing:
+
       body.amount = amountStr === "" ? null : amountStr;
       body.unit = unit === "" ? null : unit;
       body.note = note === "" ? null : note;
-  
-      // stage fields:
+
       if (stageNum !== null && Number.isFinite(stageNum) && stageNum >= 1) {
         body.stage_number = stageNum;
       }
       body.stage_name = stageName === "" ? null : stageName;
-  
+
       await api(`/recipes/${id}/ingredients/${ingredientId}`, {
         method: "PATCH",
         auth: true,
-        body,
+        body: JSON.stringify(body),
       });
-  
+
       setEditingId(null);
       await loadIngredients();
     } catch (e) {
@@ -204,7 +198,6 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
       setEditBusy(false);
     }
   }
-  
 
   async function removeIngredient(ingredientId) {
     if (!confirm("Remove this ingredient?")) return;
@@ -228,36 +221,35 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
           alt="Harvesting fresh ingredients"
           style={styles.heroImage}
         />
-        
       </div>
 
       <div style={styles.card}>
         <h3 style={styles.title}>Add ingredient</h3>
 
         <form onSubmit={handleSubmit} style={styles.form}>
-        <div style={styles.rowGrid}>
-          <label style={styles.label}>
-            Stage #
-            <input
-              style={styles.input}
-              value={stageNumber}
-              onChange={(e) => setStageNumber(Number(e.target.value || 1))}
-              inputMode="numeric"
-              disabled={submitting}
-            />
-          </label>
+          <div style={styles.rowGrid}>
+            <label style={styles.label}>
+              Stage #
+              <input
+                style={styles.input}
+                value={stageNumber}
+                onChange={(e) => setStageNumber(Number(e.target.value || 1))}
+                inputMode="numeric"
+                disabled={submitting}
+              />
+            </label>
 
-          <label style={styles.label}>
-            Stage name (optional)
-            <input
-              style={styles.input}
-              value={stageName}
-              onChange={(e) => setStageName(e.target.value)}
-              placeholder="e.g. Cake mix"
-              disabled={submitting}
-            />
-          </label>
-        </div>
+            <label style={styles.label}>
+              Stage name (optional)
+              <input
+                style={styles.input}
+                value={stageName}
+                onChange={(e) => setStageName(e.target.value)}
+                placeholder="e.g. Cake mix"
+                disabled={submitting}
+              />
+            </label>
+          </div>
 
           <div style={styles.row}>
             <label style={styles.label}>
@@ -326,11 +318,9 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
             >
               Next: add steps
             </button>
-
           </div>
         </form>
 
-        {/* List (with edit) */}
         <div style={styles.listWrap}>
           <div style={styles.listTitle}>Ingredients</div>
 
@@ -357,7 +347,6 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
                             Edit
                           </button>
 
-                          {/* Optional: remove (delete if you have that route) */}
                           <button
                             type="button"
                             onClick={() => removeIngredient(i.id)}
@@ -379,27 +368,26 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
                             placeholder="Ingredient name"
                           />
 
-<div style={styles.rowGrid}>
-  <input
-    style={styles.input}
-    value={editIng.stage_number ?? 1}
-    onChange={(e) =>
-      setEditIng((p) => ({ ...p, stage_number: e.target.value }))
-    }
-    placeholder="Stage #"
-    inputMode="numeric"
-  />
+                          <div style={styles.rowGrid}>
+                            <input
+                              style={styles.input}
+                              value={editIng.stage_number ?? 1}
+                              onChange={(e) =>
+                                setEditIng((p) => ({ ...p, stage_number: e.target.value }))
+                              }
+                              placeholder="Stage #"
+                              inputMode="numeric"
+                            />
 
-  <input
-    style={styles.input}
-    value={editIng.stage_name ?? ""}
-    onChange={(e) =>
-      setEditIng((p) => ({ ...p, stage_name: e.target.value }))
-    }
-    placeholder="Stage name (optional)"
-  />
-</div>
-
+                            <input
+                              style={styles.input}
+                              value={editIng.stage_name ?? ""}
+                              onChange={(e) =>
+                                setEditIng((p) => ({ ...p, stage_name: e.target.value }))
+                              }
+                              placeholder="Stage name (optional)"
+                            />
+                          </div>
 
                           <div style={{ display: "flex", gap: 8 }}>
                             <input
@@ -413,10 +401,13 @@ export default function IngredientForm({ recipeId, onAdded, onNext }) {
                             <input
                               style={{ ...styles.input, width: 120 }}
                               value={editIng.unit}
-                              onChange={(e) => setEditIng((p) => ({ ...p, unit: e.target.value }))}
+                              onChange={(e) =>
+                                setEditIng((p) => ({ ...p, unit: e.target.value }))
+                              }
                               placeholder="Unit"
                             />
                           </div>
+
                           <input
                             style={styles.input}
                             value={editIng.note}

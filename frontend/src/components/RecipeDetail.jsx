@@ -210,29 +210,29 @@ export default function RecipeDetail({ id, onBack }) {
   async function saveEdit(recipeId, ingredientId) {
     setEditErr("");
     setEditBusy(true);
-
+  
     try {
       const name = editIng.ingredient_name.trim();
       const amount = String(editIng.amount ?? "").trim();
       const unit = String(editIng.unit ?? "").trim();
       const note = String(editIng.note ?? "").trim();
-
+  
       if (!name && !amount && !unit && !note) {
         setEditErr("Nothing to save.");
         return;
       }
-
+  
       const body = {};
       if (name) body.ingredient_name = name;
       body.amount = amount === "" ? null : amount;
       body.unit = unit === "" ? null : unit;
       body.note = note === "" ? null : note;
-
+  
       await api(`/recipes/${recipeId}/ingredients/${ingredientId}`, {
         method: "PATCH",
-        body,
+        body: JSON.stringify(body),
       });
-
+  
       setEditingIngredientId(null);
       await load();
     } catch (e) {
