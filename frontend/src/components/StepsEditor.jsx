@@ -96,7 +96,7 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
       await api(`/recipes/${id}/steps`, {
         method: "POST",
         auth: true,
-        body: { steps },
+        body: JSON.stringify({ steps }),
       });
 
       onSaved?.(id);
@@ -339,7 +339,6 @@ const styles = {
   listTitle: { fontSize: 13, fontWeight: 800, marginBottom: 8 },
   muted: { fontSize: 13, opacity: 0.75 },
 
-  // ordered list, but styled like your ingredient list
   olist: {
     margin: 0,
     paddingLeft: 0,
