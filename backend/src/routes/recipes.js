@@ -101,6 +101,25 @@ const addStepMediaSchema = z.object({
   sort_order: z.number().int().optional().nullable(),
 });
 
+async function getLocalUserFromAuth(req) {
+  const authUserId = req.userId || req.user?.sub;
+
+  if (!authUserId) {
+    return null;
+  }
+
+  const localUser = await prisma.users.findFirst({
+    where: { auth_user_id: authUserId },
+    select: {
+      id: true,
+      username: true,
+      auth_user_id: true,
+    },
+  });
+
+  return localUser;
+}
+
 
 // -------- Routes --------
 
@@ -238,24 +257,33 @@ router.get("/:id", async (req, res) => {
 
 // Create recipe (protected)
 router.post("/", requireAuth, async (req, res) => {
-  const parsed = RecipeCreateSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json(parsed.error);
-  
+  try {
+    const parsed = RecipeCreateSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json(parsed.error);
 
-  const recipe = await prisma.recipes.create({
-    data: {
-      user_id: BigInt(String(req.userId)),
-      source: parsed.data.source ?? null,
-      name: parsed.data.name,
-      description: parsed.data.description ?? null,
+    const localUser = await getLocalUserFromAuth(req);
+    if (!localUser) {
+      return res.status(400).json({
+        error: "No linked local recipe user found for this account.",
+      });
+    }
 
-      // NEW:
-      country: parsed.data.country ?? "Not known",
-      category: parsed.data.category ?? null,
-    },
-  });
+    const recipe = await prisma.recipes.create({
+      data: {
+        user_id: localUser.id,
+        source: parsed.data.source ?? null,
+        name: parsed.data.name,
+        description: parsed.data.description ?? null,
+        country: parsed.data.country ?? "Not known",
+        category: parsed.data.category ?? null,
+      },
+    });
 
-  return res.status(201).json(recipe);
+    return res.status(201).json(recipe);
+  } catch (err) {
+    console.error("CREATE RECIPE ERROR:", err);
+    return res.status(500).json({ error: err.message ?? String(err) });
+  }
 });
 
 
@@ -272,7 +300,14 @@ router.post("/:id/ingredients", requireAuth, async (req, res) => {
     const parsed = addIngredientSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error);
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+    if (!localUser) {
+      return res.status(400).json({
+        error: "No linked local recipe user found for this account.",
+      });
+    }
+    
+    const userId = localUser.id;
 
     // Ownership check
     const recipe = await prisma.recipes.findUnique({
@@ -340,7 +375,14 @@ router.patch("/:id/ingredients/:ingredientId", requireAuth, async (req, res) => 
       return res.status(400).json({ error: "No fields provided to update." });
     }
     
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+    if (!localUser) {
+      return res.status(400).json({
+        error: "No linked local recipe user found for this account.",
+      });
+    }
+    
+    const userId = localUser.id;
 
     // Ownership check via recipe
     const recipe = await prisma.recipes.findUnique({
@@ -408,7 +450,14 @@ router.post("/:id/steps", requireAuth, async (req, res) => {
     const parsed = addStepsSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error);
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+    if (!localUser) {
+      return res.status(400).json({
+        error: "No linked local recipe user found for this account.",
+      });
+    }
+    
+    const userId = localUser.id;
 
     // Ownership check
     const recipe = await prisma.recipes.findUnique({
@@ -474,7 +523,14 @@ router.post("/:id/media", requireAuth, async (req, res) => {
     let mediaType = parsed.data.media_type;
     if (mediaType === "photo") mediaType = "image"; // normalize for DB constraint
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+    if (!localUser) {
+      return res.status(400).json({
+        error: "No linked local recipe user found for this account.",
+      });
+    }
+    
+    const userId = localUser.id;
 
     // Ownership check
     const recipe = await prisma.recipes.findUnique({
@@ -536,7 +592,14 @@ router.post("/:id/feedback", requireAuth, async (req, res) => {
     const parsed = addFeedbackSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error);
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+    if (!localUser) {
+      return res.status(400).json({
+        error: "No linked local recipe user found for this account.",
+      });
+    }
+    
+    const userId = localUser.id;
 
     // Ensure recipe exists
     const recipe = await prisma.recipes.findUnique({
@@ -581,7 +644,14 @@ router.post("/:id/media/upload", requireAuth, upload.single("file"), async (req,
       return res.status(400).json({ error: "Bad id" });
     }
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+    if (!localUser) {
+      return res.status(400).json({
+        error: "No linked local recipe user found for this account.",
+      });
+    }
+    
+    const userId = localUser.id;
 
     // Ownership check
     const recipe = await prisma.recipes.findUnique({
@@ -661,7 +731,14 @@ router.post("/steps/:stepId/media", requireAuth, async (req, res) => {
     let mediaType = parsed.data.media_type;
     if (mediaType === "photo") mediaType = "image"; // normalize
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+if (!localUser) {
+  return res.status(400).json({
+    error: "No linked local recipe user found for this account.",
+  });
+}
+
+const userId = localUser.id;
 
     // Find step + recipe owner
     const step = await prisma.recipe_steps.findUnique({
@@ -720,7 +797,14 @@ router.post(
 
       if (!req.file) return res.status(400).json({ error: "Missing file" });
 
-      const userId = BigInt(String(req.userId));
+      const localUser = await getLocalUserFromAuth(req);
+if (!localUser) {
+  return res.status(400).json({
+    error: "No linked local recipe user found for this account.",
+  });
+}
+
+const userId = localUser.id;
 
       // Find step + recipe owner
       const step = await prisma.recipe_steps.findUnique({
@@ -791,7 +875,14 @@ router.patch("/:id/media/:mediaId", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Bad id" });
     }
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+if (!localUser) {
+  return res.status(400).json({
+    error: "No linked local recipe user found for this account.",
+  });
+}
+
+const userId = localUser.id;
 
     // Ownership check
     const recipe = await prisma.recipes.findUnique({
@@ -848,7 +939,14 @@ router.delete("/:id/media/:mediaId", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Bad id" });
     }
 
-    const userId = BigInt(String(req.userId));
+    const localUser = await getLocalUserFromAuth(req);
+if (!localUser) {
+  return res.status(400).json({
+    error: "No linked local recipe user found for this account.",
+  });
+}
+
+const userId = localUser.id;
 
     // Ownership check
     const recipe = await prisma.recipes.findUnique({
