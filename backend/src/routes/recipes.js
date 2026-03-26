@@ -166,6 +166,7 @@ async function getLocalUserFromAuth(req) {
       username,
       email: authUser.email || null,
       auth_user_id: authUserId,
+      password_hash: "__CENTRAL_AUTH_ONLY__",
     },
     select: {
       id: true,
