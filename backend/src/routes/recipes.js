@@ -103,16 +103,74 @@ const addStepMediaSchema = z.object({
 
 async function getLocalUserFromAuth(req) {
   const authUserId = req.userId || req.user?.sub;
+  const authUser = req.user?.authUser || {};
 
-  if (!authUserId) {
-    return null;
-  }
+  if (!authUserId) return null;
 
-  const localUser = await prisma.users.findFirst({
+  // 1️⃣ Try find existing user by auth_user_id
+  let localUser = await prisma.users.findFirst({
     where: { auth_user_id: authUserId },
     select: {
       id: true,
       username: true,
+      email: true,
+      auth_user_id: true,
+    },
+  });
+
+  if (localUser) return localUser;
+
+  // 2️⃣ Try match existing local user by email (link accounts)
+  if (authUser.email) {
+    const existingByEmail = await prisma.users.findFirst({
+      where: { email: authUser.email },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        auth_user_id: true,
+      },
+    });
+
+    if (existingByEmail) {
+      localUser = await prisma.users.update({
+        where: { id: existingByEmail.id },
+        data: { auth_user_id: authUserId },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          auth_user_id: true,
+        },
+      });
+
+      return localUser;
+    }
+  }
+
+  // 3️⃣ Create new local user (safe + unique username)
+  const baseName =
+    (authUser.displayName ||
+      [authUser.firstName, authUser.lastName].filter(Boolean).join(" ").trim() ||
+      authUser.email ||
+      "user")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 30) || "user";
+
+  const username = `${baseName}_${authUserId.slice(-6)}`;
+
+  localUser = await prisma.users.create({
+    data: {
+      username,
+      email: authUser.email || null,
+      auth_user_id: authUserId,
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
       auth_user_id: true,
     },
   });
