@@ -1,3 +1,5 @@
+// frontend/src/components/CreateRecipeForm.jsx
+
 import { useState } from "react";
 import { api } from "../lib/api";
 
@@ -22,11 +24,11 @@ export default function CreateRecipeForm({ onCreated }) {
       const recipe = await api("/recipes", {
         method: "POST",
         auth: true,
-        body: {
+        body: JSON.stringify({
           name: name.trim(),
           source: source.trim() || null,
           description: description.trim() || null,
-        },
+        }),
       });
 
       setName("");
