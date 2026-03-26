@@ -1,3 +1,5 @@
+// frontend/src/components/home.jsx
+
 import { useEffect, useState } from "react";
 
 import Section from "./Section";
@@ -280,10 +282,23 @@ export default function Home({
         </div>
 
         <div style={page.kpiCard}>
-          <div style={page.kpiLabel}>Tip</div>
-          <div style={page.kpiValue}>AND search</div>
-          <div style={page.kpiHint}>“onion tomato” finds recipes containing both.</div>
-        </div>
+  <div style={kpi.header}>
+    <img src={searchImg} alt="Search tip" style={kpi.icon} />
+    <div style={kpi.title}>How it works</div>
+  </div>
+
+  <div style={kpi.text}>
+    Enter the ingredients you have, discover what you can make from our mum's recipe collection.
+  </div>
+
+  <div style={kpi.text}>
+    <strong>Example:</strong> “onion tomato” finds recipes containing both ingredients.
+  </div>
+
+  <div style={kpi.text}>
+    You can also add your own recipes and share them with others.
+  </div>
+</div>
       </div>
       </div>
 
@@ -340,6 +355,8 @@ const page = {
     width: "100%",
     margin: "0 auto",
   },
+
+  
 
   ctaCol: {
     display: "flex",
@@ -420,13 +437,22 @@ const page = {
   note: { marginTop: 10, fontSize: 13, opacity: 0.7 },
 
   kpiCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     border: "1px solid #e5e7eb",
-    background: "#fafafa",
-    padding: 16,
+    background: "linear-gradient(135deg, #ffffff, #f9fafb)",
+    padding: 18,
+  
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
+    gap: 6,
+  
+    // ✨ Make it pop
+    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  
+    // subtle accent
+    borderLeft: "4px solid #111827",
   },
   kpiLabel: { fontSize: 12, opacity: 0.7 },
   kpiValue: { fontSize: 26, fontWeight: 700, lineHeight: 1.1, marginTop: 6 },
@@ -554,4 +580,34 @@ const grid = {
     color: "#374151",
   },
   desc: { fontSize: 13, lineHeight: 1.35, color: "#374151" },
+};
+
+const kpi = {
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+
+  icon: {
+    width: 40,
+    height: 40,
+    objectFit: "contain",
+    opacity: 0.95,
+  },
+
+  title: {
+    fontSize: 24,        // ⬆ bigger
+    fontWeight: 800,
+    color: "#111827",
+    letterSpacing: "-0.2px",
+  },
+
+  text: {
+    fontSize: 20,        // ⬆ bigger (was ~13)
+    lineHeight: 1.6,     // ⬆ more readable
+    color: "#374151",
+    marginTop: 8,
+  },
 };
