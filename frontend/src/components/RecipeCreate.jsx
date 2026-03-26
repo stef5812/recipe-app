@@ -1,3 +1,5 @@
+// frontend/src/components/RecipeCreate.jsx
+
 import { useState } from "react";
 import { api } from "../lib/api";
 import PageContainer from "./PageContainer";
@@ -73,7 +75,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
       const created = await api("/recipes", {
         method: "POST",
         auth: true,
-        body: payload,
+        body: JSON.stringify(payload),
       });
 
       const newId = created?.id ?? created?.recipe?.id;
@@ -108,8 +110,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
           ← Back to recipes
         </button>
       ) : null}
-  
-      {/* ✅ Hero image at top */}
+
       <div
         style={{
           marginBottom: 16,
@@ -130,10 +131,10 @@ export default function RecipeCreate({ onCreated, onBack }) {
           }}
         />
       </div>
-  
+
       <Section title="Create a recipe">
         {err ? <div style={styles.error}>{err}</div> : null}
-  
+
         <form onSubmit={submit} style={styles.form}>
           <label style={styles.label}>
             Name
@@ -145,7 +146,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
               autoFocus
             />
           </label>
-  
+
           <label style={styles.label}>
             Description
             <textarea
@@ -156,7 +157,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
               rows={4}
             />
           </label>
-  
+
           <label style={styles.label}>
             Source
             <input
@@ -166,7 +167,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
               placeholder="Book / website / family / etc (optional)"
             />
           </label>
-  
+
           <label style={styles.label}>
             Country
             <select
@@ -181,7 +182,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
               ))}
             </select>
           </label>
-  
+
           <label style={styles.label}>
             Category
             <select
@@ -197,7 +198,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
               ))}
             </select>
           </label>
-  
+
           <div style={styles.actions}>
             <button type="submit" disabled={saving} style={styles.primaryBtn}>
               {saving ? "Saving…" : "Save and add ingredients"}
@@ -207,7 +208,7 @@ export default function RecipeCreate({ onCreated, onBack }) {
       </Section>
     </PageContainer>
   );
-  }
+}
 
 const styles = {
   error: {
