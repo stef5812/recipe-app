@@ -10,6 +10,7 @@ import registerChef from "../assets/register.png";
 import createRecipeImg from "../assets/create-recipe.png";
 import searchImg from "../assets/search.png";
 import viewRecipesImg from "../assets/view-recipes.png";
+import ListRecipesImg from "../assets/list-recipes.png";
 
 import recipeHeader from "../assets/recipe-header.jpg";
 import recipeIcon from "../assets/logo.png";
@@ -249,102 +250,103 @@ export default function Home({
             {err ? <div style={page.error}>{err}</div> : null}
 
             <div style={page.ctas}>
-              {!isAuthed ? (
-                <>
-                  <div style={page.ctaCol}>
-                    <button
-                      className="app-btn"
-                      onClick={onGoLogin}
-                      aria-label="Log in"
-                      title="Log in"
-                      style={imgBtn.button}
-                      type="button"
-                    >
-                      <img
-                        src={loginChef}
-                        alt="Log in"
-                        style={{ ...imgBtn.img, width: CTA_ICON_width, height: CTA_ICON_height }}
-                      />
-                    </button>
-                    <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>Login</div>
-                  </div>
+  {!isAuthed ? (
+    <>
+      <div style={page.ctaCol}>
+        <button
+          className="app-btn"
+          onClick={onGoLogin}
+          aria-label="Log in"
+          title="Log in"
+          style={imgBtn.button}
+          type="button"
+        >
+          <img
+            src={loginChef}
+            alt="Log in"
+            style={{ ...imgBtn.img, width: CTA_ICON_width, height: CTA_ICON_height }}
+          />
+        </button>
+        <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>Login</div>
+      </div>
 
-                  <div style={page.ctaCol}>
-                    <button
-                      className="app-btn"
-                      onClick={onRegister}
-                      aria-label="Register"
-                      title="Register"
-                      style={imgBtn.button}
-                      type="button"
-                    >
-                      <img
-                        src={registerChef}
-                        alt="Register"
-                        style={{ ...imgBtn.img, width: CTA_ICON_width, height: CTA_ICON_height }}
-                      />
-                    </button>
-                    <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>Register</div>
-                  </div>
-                </>
-              ) : (
-                <div style={page.ctaCol}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                    <button
-                      className="app-btn"
-                      onClick={onGoRecipes}
-                      aria-label="View recipes"
-                      title="View recipes"
-                      style={imgBtn.button}
-                      type="button"
-                    >
-                      <img
-                        src={viewRecipesImg}
-                        alt="View recipes"
-                        style={{ ...imgBtn.img, width: CTA_ICON_width, height: CTA_ICON_height }}
-                      />
-                    </button>
+      <div style={page.ctaCol}>
+        <button
+          className="app-btn"
+          onClick={onRegister}
+          aria-label="Register"
+          title="Register"
+          style={imgBtn.button}
+          type="button"
+        >
+          <img
+            src={registerChef}
+            alt="Register"
+            style={{ ...imgBtn.img, width: CTA_ICON_width, height: CTA_ICON_height }}
+          />
+        </button>
+        <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>Register</div>
+      </div>
+    </>
+  ) : (
+    <div style={page.ctaCol}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <button type="button" className="app-btn" onClick={onLogout} style={page.logoutBtn}>
+          Log out
+        </button>
+      </div>
+    </div>
+  )}
 
-                    <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>View recipes</div>
+  <div style={page.ctaCol}>
+    <button
+      className="app-btn"
+      onClick={onGoRecipes}
+      aria-label="View recipes"
+      title="View recipes"
+      style={imgBtn.button}
+      type="button"
+    >
+      <img
+        src={viewRecipesImg}
+        alt="View recipes"
+        style={{ ...imgBtn.img, width: CTA_ICON_width, height: CTA_ICON_height }}
+      />
+    </button>
+    <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>View recipes</div>
+  </div>
 
-                    <button type="button" className="app-btn" onClick={onLogout} style={page.logoutBtn}>
-                      Log out
-                    </button>
-                  </div>
-                </div>
-              )}
+  <div style={page.ctaCol}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+      <button
+        className="app-btn"
+        onClick={onCreateRecipe}
+        disabled={!isAuthed}
+        aria-label="Create recipe"
+        title={!isAuthed ? "Log in to create recipes" : "Create recipe"}
+        style={{
+          ...imgBtn.button,
+          opacity: isAuthed ? 1 : 0.4,
+          cursor: isAuthed ? "pointer" : "not-allowed",
+        }}
+        type="button"
+      >
+        <img
+          src={createRecipeImg}
+          alt="Create recipe"
+          style={{
+            ...imgBtn.img,
+            width: CTA_ICON_width,
+            height: CTA_ICON_height,
+            filter: !isAuthed ? "grayscale(1)" : "none",
+          }}
+        />
+      </button>
 
-              <div style={page.ctaCol}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <button
-                    className="app-btn"
-                    onClick={onCreateRecipe}
-                    disabled={!isAuthed}
-                    aria-label="Create recipe"
-                    title={!isAuthed ? "Log in to create recipes" : "Create recipe"}
-                    style={{
-                      ...imgBtn.button,
-                      opacity: isAuthed ? 1 : 0.4,
-                      cursor: isAuthed ? "pointer" : "not-allowed",
-                    }}
-                    type="button"
-                  >
-                    <img
-                      src={createRecipeImg}
-                      alt="Create recipe"
-                      style={{
-                        ...imgBtn.img,
-                        width: CTA_ICON_width,
-                        height: CTA_ICON_height,
-                        filter: !isAuthed ? "grayscale(1)" : "none",
-                      }}
-                    />
-                  </button>
-
-                  <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>Add recipes</div>
-                </div>
-              </div>
-            </div>
+      <div style={{ fontSize: 13, opacity: 0.75, textAlign: "center" }}>Add recipes</div>
+    </div>
+  </div>
+</div>
 
             {!isAuthed ? <p style={page.note}>Log in to create recipes and upload photos.</p> : null}
           </div>

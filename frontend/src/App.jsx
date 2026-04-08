@@ -239,13 +239,12 @@ export default function App() {
       <Route
         path="/recipes"
         element={
-          <RequireAuth authed={authed} authChecked={authChecked}>
-            <RecipesList
-              onOpen={(id) => navigate(`/recipes/${id}`)}
-              onNew={() => navigate("/recipes/new")}
-              onBack={() => navigate("/")}
-            />
-          </RequireAuth>
+          <RecipesList
+            authed={authed}
+            onOpen={(id) => navigate(`/recipes/${id}`)}
+            onNew={() => navigate("/recipes/new")}
+            onBack={() => navigate("/")}
+          />
         }
       />
 
@@ -282,11 +281,9 @@ export default function App() {
       <Route
         path="/recipes/:id"
         element={
-          <RequireAuth authed={authed} authChecked={authChecked}>
-            <ErrorBoundary>
-              <RecipeDetailRoute />
-            </ErrorBoundary>
-          </RequireAuth>
+          <ErrorBoundary>
+            <RecipeDetailRoute />
+          </ErrorBoundary>
         }
       />
 
