@@ -27,7 +27,7 @@ function getEnvLinks() {
 
   if (isLocal) {
     return [
-      { label: "Portfolio", href: "http://localhost:5173/" },
+      { label: "Portfolio", href: "http://localhost:5177/" },
       { label: "HalfYourBook", href: "http://localhost:5175/halfyourbook/" },
       { label: "Blog", href: "http://localhost:5176/" },
     ];
