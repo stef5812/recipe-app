@@ -70,3 +70,42 @@ export async function addIngredient(recipeId, ingredient) {
     body: JSON.stringify(ingredient),
   });
 }
+
+export async function apiFetch(path, options = {}) {
+  const response = await fetch(`/api${path}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const isJson = contentType.includes("application/json");
+  const data = isJson ? await response.json() : await response.text();
+
+  if (!response.ok) {
+    const message =
+      typeof data === "object" && data?.error
+        ? data.error
+        : `Request failed with status ${response.status}`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+export function generateRecipe(payload) {
+  return apiFetch("/me/ai/recipe/generate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function improveRecipe(payload) {
+  return apiFetch("/me/ai/recipe/improve", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

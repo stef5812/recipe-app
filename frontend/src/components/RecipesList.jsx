@@ -1,5 +1,3 @@
-// frontend/src/components/RecipeList.jsx
-
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import Section from "./Section";
@@ -7,7 +5,6 @@ import PageContainer from "./PageContainer";
 import { getCategoryCover } from "../lib/categoryCover";
 
 import topImg from "../assets/top-page.png";
-
 
 function getTokenPayload() {
   const token = localStorage.getItem("token");
@@ -19,7 +16,7 @@ function getTokenPayload() {
   }
 }
 
-export default function RecipesList({ onOpen, onNew, onBack  }) {
+export default function RecipesList({ onOpen, onNew, onBack, onOpenAiAssistant }) {
   const [recipes, setRecipes] = useState([]);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,11 +24,11 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
   function resolveSrc(url) {
     const raw = String(url ?? "").trim().replaceAll("\\", "/");
     if (!raw) return "";
-  
+
     if (/^https?:\/\//i.test(raw)) return raw;
-  
+
     const isDev = import.meta.env.DEV;
-  
+
     if (isDev) {
       if (raw.startsWith("/recipe-app/api/uploads/")) {
         return raw.replace("/recipe-app/api", "");
@@ -41,46 +38,46 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
       }
       if (raw.startsWith("/uploads/")) return raw;
       if (raw.startsWith("uploads/")) return `/${raw}`;
-  
+
       const recipeUploadsIndex = raw.indexOf("/recipe-app/api/uploads/");
       if (recipeUploadsIndex !== -1) {
         return raw.slice(recipeUploadsIndex).replace("/recipe-app/api", "");
       }
-  
+
       const uploadsIndex = raw.indexOf("/uploads/");
       if (uploadsIndex !== -1) {
         return raw.slice(uploadsIndex);
       }
-  
+
       return `/uploads/${raw}`;
     }
-  
+
     if (raw.startsWith("/recipe-app/api/uploads/")) return raw;
     if (raw.startsWith("recipe-app/api/uploads/")) return `/${raw}`;
-  
+
     if (raw.startsWith("/uploads/")) return `/recipe-app/api${raw}`;
     if (raw.startsWith("uploads/")) return `/recipe-app/api/${raw}`;
-  
+
     const recipeUploadsIndex = raw.indexOf("/recipe-app/api/uploads/");
     if (recipeUploadsIndex !== -1) {
       return raw.slice(recipeUploadsIndex);
     }
-  
+
     const plainRecipeUploadsIndex = raw.indexOf("recipe-app/api/uploads/");
     if (plainRecipeUploadsIndex !== -1) {
       return `/${raw.slice(plainRecipeUploadsIndex)}`;
     }
-  
+
     const uploadsIndex = raw.indexOf("/uploads/");
     if (uploadsIndex !== -1) {
       return `/recipe-app/api${raw.slice(uploadsIndex)}`;
     }
-  
+
     const plainUploadsIndex = raw.indexOf("uploads/");
     if (plainUploadsIndex !== -1) {
       return `/recipe-app/api/${raw.slice(plainUploadsIndex)}`;
     }
-  
+
     return raw;
   }
 
@@ -118,45 +115,32 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
   }, []);
 
   return (
-    
     <PageContainer title="Recipes">
+      <div style={styles.topImageWrap}>
+        <img
+          src={topImg}
+          alt="Recipes"
+          style={styles.topImage}
+          loading="lazy"
+        />
+      </div>
 
-<div style={styles.topImageWrap}>
-  <img
-    src={topImg}
-    alt="Recipes"
-    style={styles.topImage}
-    loading="lazy"
-  />
-
-</div>
-
-
-{onBack ? (
-  <button
-    type="button"
-    onClick={onBack}
-    style={{
-      marginBottom: 10,
-      border: "1px solid #e5e7eb",
-      borderRadius: 12,
-      padding: "8px 10px",
-      background: "white",
-      cursor: "pointer",
-      fontWeight: 600,
-    }}
-  >
-    ← Back to home
-  </button>
-) : null}
-
+      {onBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          style={styles.backBtn}
+        >
+          ← Back to home
+        </button>
+      ) : null}
 
       <Section title="All recipes">
         <div style={styles.headerRow}>
           <button
             type="button"
             onClick={() => onNew?.()}
-            style={styles.newBtn}
+            style={styles.primaryBtn}
             title="Create a new recipe"
           >
             ➕ New recipe
@@ -165,7 +149,7 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
           <button
             type="button"
             onClick={load}
-            style={styles.refreshBtn}
+            style={styles.secondaryBtn}
             title="Refresh list"
           >
             ↻ Refresh
@@ -173,25 +157,52 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
         </div>
 
         {err ? <div style={styles.error}>{err}</div> : null}
-        {loading ? <p style={{ opacity: 0.7 }}>Loading…</p> : null}
+        {loading ? <p style={styles.loadingText}>Loading…</p> : null}
 
         {!loading && recipes.length === 0 ? (
-          <p style={{ opacity: 0.7 }}>No recipes yet.</p>
+          <p style={styles.emptyText}>No recipes yet.</p>
         ) : (
           <div style={styles.grid}>
+            <div style={styles.cardWrap}>
+              <button
+                type="button"
+                onClick={() => onOpenAiAssistant?.()}
+                style={{ ...styles.card, ...styles.aiCard }}
+                className="recipe-card"
+                title="Open AI Recipe Assistant"
+              >
+                <div style={styles.coverWrap}>
+                  <div style={styles.aiCover}>
+                    <div style={styles.aiBadge}>AI</div>
+                  </div>
+                </div>
+
+                <div style={styles.cardTop}>
+                  <div style={styles.name}>AI Recipe Assistant</div>
+                  <div style={styles.chev}>›</div>
+                </div>
+
+                <div style={styles.desc}>
+                  Generate a brand new recipe from a prompt, or improve an existing one with AI.
+                </div>
+
+                <div style={styles.metaRow}>
+                  <span style={styles.pill}>AI tools</span>
+                  <span style={styles.pill}>Create faster</span>
+                </div>
+              </button>
+            </div>
+
             {recipes.map((r) => {
-              // If your /recipes endpoint returns recipe_media with is_primary, grab it:
               const cover =
-              r?.recipe_media?.find?.((m) => m.is_primary) ??
-              r?.recipe_media?.[0] ??
-              null;
-            
-            const coverUrl =
-              cover?.url && cover?.media_type !== "video"
-                ? resolveSrc(cover.url)
-                : getCategoryCover(r.category);
-            
-              
+                r?.recipe_media?.find?.((m) => m.is_primary) ??
+                r?.recipe_media?.[0] ??
+                null;
+
+              const coverUrl =
+                cover?.url && cover?.media_type !== "video"
+                  ? resolveSrc(cover.url)
+                  : getCategoryCover(r.category);
 
               return (
                 <div key={String(r.id)} style={styles.cardWrap}>
@@ -221,11 +232,15 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
                     {r.description ? (
                       <div style={styles.desc}>{r.description}</div>
                     ) : (
-                      <div style={{ ...styles.desc, opacity: 0.6 }}>(no description)</div>
+                      <div style={{ ...styles.desc, opacity: 0.6 }}>
+                        (no description)
+                      </div>
                     )}
 
                     <div style={styles.metaRow}>
-                      {r.source ? <span style={styles.pill}>Source: {r.source}</span> : null}
+                      {r.source ? (
+                        <span style={styles.pill}>Source: {r.source}</span>
+                      ) : null}
                       <span style={styles.pill}>ID: {String(r.id)}</span>
                     </div>
                   </button>
@@ -254,53 +269,70 @@ export default function RecipesList({ onOpen, onNew, onBack  }) {
 }
 
 const styles = {
-
   topImageWrap: {
     maxWidth: 720,
-    margin: "0 auto 16px",  // ← centres horizontally
+    margin: "0 auto 16px",
     display: "flex",
-    justifyContent: "center", // ← centres the image inside
+    justifyContent: "center",
     alignItems: "center",
     borderRadius: 16,
     padding: 12,
     border: "1px solid #e5e7eb",
     background: "#fafafa",
   },
-  
+
   topImage: {
-    width: 160,        // control image size here
+    width: 160,
     height: 110,
     objectFit: "cover",
     borderRadius: 12,
     display: "block",
   },
-  
-  
+
+  backBtn: {
+    marginBottom: 10,
+    border: "1px solid #e5e7eb",
+    borderRadius: 12,
+    padding: "8px 10px",
+    background: "white",
+    cursor: "pointer",
+    fontWeight: 600,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+  },
 
   headerRow: {
     display: "flex",
     gap: 10,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 14,
+    flexWrap: "wrap",
   },
-  newBtn: {
+
+  primaryBtn: {
     border: "1px solid #e5e7eb",
     borderRadius: 12,
-    padding: "8px 10px",
+    padding: "10px 14px",
     background: "white",
     cursor: "pointer",
     boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
     fontWeight: 700,
+    fontSize: 14,
+    lineHeight: 1.2,
   },
-  refreshBtn: {
+
+  secondaryBtn: {
     border: "1px solid #e5e7eb",
     borderRadius: 12,
-    padding: "8px 10px",
+    padding: "10px 14px",
     background: "white",
     cursor: "pointer",
     boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-    opacity: 0.9,
+    fontWeight: 600,
+    fontSize: 14,
+    lineHeight: 1.2,
+    opacity: 0.95,
   },
+
   error: {
     marginBottom: 10,
     padding: "10px 12px",
@@ -310,6 +342,17 @@ const styles = {
     color: "#991b1b",
     fontSize: 13,
   },
+
+  loadingText: {
+    opacity: 0.7,
+    fontSize: 14,
+  },
+
+  emptyText: {
+    opacity: 0.7,
+    fontSize: 14,
+  },
+
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
@@ -347,6 +390,10 @@ const styles = {
     transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
   },
 
+  aiCard: {
+    background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+  },
+
   coverWrap: {
     marginBottom: 10,
     borderRadius: 12,
@@ -354,11 +401,37 @@ const styles = {
     border: "1px solid #e5e7eb",
     background: "#fafafa",
   },
+
   coverImg: {
     width: "100%",
     height: 140,
     objectFit: "cover",
     display: "block",
+  },
+
+  aiCover: {
+    width: "100%",
+    height: 140,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background:
+      "radial-gradient(circle at top left, #dbeafe 0%, #eff6ff 35%, #f8fafc 100%)",
+  },
+
+  aiBadge: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    border: "1px solid #cbd5e1",
+    background: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+    fontWeight: 800,
+    color: "#334155",
+    boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
   },
 
   cardTop: {
@@ -368,16 +441,19 @@ const styles = {
     gap: 10,
     marginBottom: 6,
   },
+
   name: {
     fontSize: 16,
     fontWeight: 700,
     lineHeight: 1.2,
   },
+
   chev: {
     fontSize: 22,
     opacity: 0.35,
     lineHeight: 1,
   },
+
   desc: {
     fontSize: 13,
     opacity: 0.85,
@@ -388,11 +464,13 @@ const styles = {
     WebkitLineClamp: 3,
     WebkitBoxOrient: "vertical",
   },
+
   metaRow: {
     display: "flex",
     gap: 8,
     flexWrap: "wrap",
   },
+
   pill: {
     fontSize: 12,
     padding: "5px 9px",

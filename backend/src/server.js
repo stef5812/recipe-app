@@ -9,6 +9,8 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import recipeRoutes from "./routes/recipes.js";
 
+import aiRecipeRoutes from "./routes/ai.recipe.routes.js";
+
 // Allow JSON.stringify to handle BigInt (convert to string)
 BigInt.prototype.toJSON = function () {
   return this.toString();
@@ -31,6 +33,8 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/auth", authRoutes);
 app.use("/api/recipes", recipeRoutes);
+
+app.use("/api/me/ai/recipe", aiRecipeRoutes);
 
 // JSON error handler (so curl doesn't get HTML)
 app.use((err, _req, res, _next) => {

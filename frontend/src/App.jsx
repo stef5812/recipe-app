@@ -18,6 +18,7 @@ import RecipeCreate from "./components/RecipeCreate";
 import RecipeDetail from "./components/RecipeDetail";
 import IngredientForm from "./components/IngredientForm";
 import StepsEditor from "./components/StepsEditor";
+import AIRecipeAssistantPage from "./components/AIRecipeAssistantPage";
 
 import PageContainer from "./components/PageContainer";
 import Section from "./components/Section";
@@ -244,7 +245,17 @@ export default function App() {
             onOpen={(id) => navigate(`/recipes/${id}`)}
             onNew={() => navigate("/recipes/new")}
             onBack={() => navigate("/")}
+            onOpenAiAssistant={() => navigate("/recipes/ai")}
           />
+        }
+      />
+
+      <Route
+        path="/recipes/ai"
+        element={
+          <RequireAuth authed={authed} authChecked={authChecked}>
+            <AIRecipeAssistantPage onBack={() => navigate("/recipes")} />
+          </RequireAuth>
         }
       />
 

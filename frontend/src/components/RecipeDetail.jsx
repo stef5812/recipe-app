@@ -11,6 +11,8 @@ import Section from "../components/Section";
 import { getCategoryCover } from "../lib/categoryCover";
 import { formStyles } from "./ui/formStyles";
 
+import AIRecipeAssistant from "./AIRecipeAssistant";
+
 export default function RecipeDetail({ id, onBack }) {
   const [recipe, setRecipe] = useState(null);
   const [err, setErr] = useState("");
