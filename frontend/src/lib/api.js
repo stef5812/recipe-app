@@ -72,7 +72,10 @@ export async function addIngredient(recipeId, ingredient) {
 }
 
 export async function apiFetch(path, options = {}) {
-  const response = await fetch(`/api${path}`, {
+  const apiPath = path.startsWith("/api") ? path : `/api${path}`;
+  const url = `${BASE}${apiPath}`;
+
+  const response = await fetch(url, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -89,6 +92,8 @@ export async function apiFetch(path, options = {}) {
     const message =
       typeof data === "object" && data?.error
         ? data.error
+        : typeof data === "string" && data
+        ? data
         : `Request failed with status ${response.status}`;
     throw new Error(message);
   }
