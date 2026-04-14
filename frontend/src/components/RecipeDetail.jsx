@@ -43,60 +43,28 @@ export default function RecipeDetail({ id, onBack }) {
     const raw = String(url ?? "").trim().replaceAll("\\", "/");
     if (!raw) return "";
   
+    // Absolute URLs (already correct)
     if (/^https?:\/\//i.test(raw)) return raw;
   
-    const isDev = import.meta.env.DEV;
+    const API_PREFIX = "/recipe-app/api/uploads";
   
-    if (isDev) {
-      if (raw.startsWith("/recipe-app/api/uploads/")) {
-        return raw.replace("/recipe-app/api", "");
-      }
-      if (raw.startsWith("recipe-app/api/uploads/")) {
-        return `/${raw.replace(/^recipe-app\/api/, "")}`;
-      }
-      if (raw.startsWith("/uploads/")) return raw;
-      if (raw.startsWith("uploads/")) return `/${raw}`;
-  
-      const recipeUploadsIndex = raw.indexOf("/recipe-app/api/uploads/");
-      if (recipeUploadsIndex !== -1) {
-        return raw.slice(recipeUploadsIndex).replace("/recipe-app/api", "");
-      }
-  
-      const uploadsIndex = raw.indexOf("/uploads/");
-      if (uploadsIndex !== -1) {
-        return raw.slice(uploadsIndex);
-      }
-  
-      return `/uploads/${raw}`;
-    }
-  
+    // Already correct (production path)
     if (raw.startsWith("/recipe-app/api/uploads/")) return raw;
     if (raw.startsWith("recipe-app/api/uploads/")) return `/${raw}`;
   
-    if (raw.startsWith("/uploads/")) return `/recipe-app/api${raw}`;
-    if (raw.startsWith("uploads/")) return `/recipe-app/api/${raw}`;
+    // Handle /uploads/... (old format)
+    if (raw.startsWith("/uploads/")) return `${API_PREFIX}${raw}`;
+    if (raw.startsWith("uploads/")) return `${API_PREFIX}/${raw.replace(/^uploads\//, "")}`;
   
-    const recipeUploadsIndex = raw.indexOf("/recipe-app/api/uploads/");
-    if (recipeUploadsIndex !== -1) {
-      return raw.slice(recipeUploadsIndex);
-    }
-  
-    const plainRecipeUploadsIndex = raw.indexOf("recipe-app/api/uploads/");
-    if (plainRecipeUploadsIndex !== -1) {
-      return `/${raw.slice(plainRecipeUploadsIndex)}`;
-    }
-  
+    // Handle weird embedded paths
     const uploadsIndex = raw.indexOf("/uploads/");
     if (uploadsIndex !== -1) {
-      return `/recipe-app/api${raw.slice(uploadsIndex)}`;
+      return `${API_PREFIX}${raw.slice(uploadsIndex)}`;
     }
   
-    const plainUploadsIndex = raw.indexOf("uploads/");
-    if (plainUploadsIndex !== -1) {
-      return `/recipe-app/api/${raw.slice(plainUploadsIndex)}`;
-    }
-  
-    return raw;
+    // 🔥 CRITICAL FIX: handle plain filenames
+    // e.g. "1776165820027-papaya_jam.jpg"
+    return `${API_PREFIX}/${raw.replace(/^\/+/, "")}`;
   }
 
   const load = useCallback(async () => {
