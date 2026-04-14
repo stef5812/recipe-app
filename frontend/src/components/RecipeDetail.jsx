@@ -11,6 +11,8 @@ import Section from "../components/Section";
 import { getCategoryCover } from "../lib/categoryCover";
 import { formStyles } from "./ui/formStyles";
 
+const API_BASE = (import.meta.env.VITE_API_BASE || "/recipe-app/api").replace(/\/+$/, "");
+
 import AIRecipeAssistant from "./AIRecipeAssistant";
 
 export default function RecipeDetail({ id, onBack }) {
@@ -139,25 +141,25 @@ export default function RecipeDetail({ id, onBack }) {
 
   async function uploadPrimaryImage(file) {
     if (!file) return;
-
+  
     setUploadErr("");
     setUploading(true);
-
+  
     try {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("media_type", "photo");
       fd.append("is_primary", "true");
-
-      const res = await fetch(`/api/recipes/${id}/media/upload`, {
+  
+      const res = await fetch(`${API_BASE}/recipes/${id}/media/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
       });
-
+  
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Upload failed");
-
+  
       await load();
     } catch (e) {
       setUploadErr(e.message);
@@ -165,23 +167,23 @@ export default function RecipeDetail({ id, onBack }) {
       setUploading(false);
     }
   }
-
+  
   async function uploadStepMedia(stepId, file, mediaType) {
     if (!file) return;
-
+  
     const fd = new FormData();
     fd.append("file", file);
     fd.append("media_type", mediaType);
-
-    const res = await fetch(`/api/recipes/steps/${stepId}/media/upload`, {
+  
+    const res = await fetch(`${API_BASE}/recipes/steps/${stepId}/media/upload`, {
       method: "POST",
       credentials: "include",
       body: fd,
     });
-
+  
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.error || "Step upload failed");
-
+  
     await load();
   }
 
