@@ -1,4 +1,5 @@
 // src/components/StepsEditor.jsx
+
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import { useParams, useNavigate } from "react-router-dom";
@@ -9,23 +10,49 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
 
   const id = String(recipeId ?? params.id ?? "");
 
-  // Convert [{step_number, instruction}] to array of strings
+  const [loadedSteps, setLoadedSteps] = useState([]);
+  const [loadingExisting, setLoadingExisting] = useState(false);
+
+  const sourceSteps = Array.isArray(initialSteps) ? initialSteps : loadedSteps;
+
   const initial = useMemo(() => {
-    return (initialSteps || [])
+    return sourceSteps
       .slice()
       .sort((a, b) => (a.step_number ?? 0) - (b.step_number ?? 0))
       .map((s) => s.instruction ?? "");
-  }, [initialSteps]);
+  }, [sourceSteps]);
 
   const [steps, setSteps] = useState(initial);
   const [newStep, setNewStep] = useState("");
 
-  // Inline edit
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingText, setEditingText] = useState("");
 
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    async function loadExistingSteps() {
+      if (!id) return;
+
+      if (Array.isArray(initialSteps)) {
+        setLoadedSteps([]);
+        return;
+      }
+
+      setLoadingExisting(true);
+      try {
+        const recipe = await api(`/recipes/${id}`);
+        setLoadedSteps(Array.isArray(recipe?.recipe_steps) ? recipe.recipe_steps : []);
+      } catch (e) {
+        setErr(e.message || "Failed to load existing steps.");
+      } finally {
+        setLoadingExisting(false);
+      }
+    }
+
+    loadExistingSteps();
+  }, [id, initialSteps]);
 
   useEffect(() => {
     setSteps(initial);
@@ -79,14 +106,16 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
       return;
     }
 
-    // If currently editing, apply first
+    let finalSteps = steps;
+
     if (editingIndex !== null) {
       const trimmed = editingText.trim();
       if (!trimmed) {
         setErr("Step cannot be empty.");
         return;
       }
-      setSteps((prev) => prev.map((s, i) => (i === editingIndex ? trimmed : s)));
+      finalSteps = steps.map((s, i) => (i === editingIndex ? trimmed : s));
+      setSteps(finalSteps);
       setEditingIndex(null);
       setEditingText("");
     }
@@ -96,7 +125,7 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
       await api(`/recipes/${id}/steps`, {
         method: "POST",
         auth: true,
-        body: JSON.stringify({ steps }),
+        body: JSON.stringify({ steps: finalSteps }),
       });
 
       onSaved?.(id);
@@ -127,7 +156,6 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
       <div style={styles.card}>
         <h3 style={styles.title}>Steps</h3>
 
-        {/* Add new step */}
         <div style={styles.form}>
           <div style={styles.row}>
             <label style={styles.label}>
@@ -167,11 +195,12 @@ export default function StepsEditor({ recipeId, initialSteps, onSaved, onFinish 
           {err ? <div style={styles.error}>{err}</div> : null}
         </div>
 
-        {/* Steps list */}
         <div style={styles.listWrap}>
           <div style={styles.listTitle}>Current steps</div>
 
-          {steps.length === 0 ? (
+          {loadingExisting ? (
+            <div style={styles.muted}>Loading existing steps…</div>
+          ) : steps.length === 0 ? (
             <div style={styles.muted}>No steps yet. Add the first one above.</div>
           ) : (
             <ol style={styles.olist}>
